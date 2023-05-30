@@ -29,6 +29,15 @@ addpath path-prefix/pbdlib-matlab/demos/m_fcts/
 addpath path-prefix/robInfLib-matlab/fcts/
 ```
 
+### Mex DTW C-code
+DTW is required to evaluate method performance. The source C code is [`/src/util/dtw_c.c`](/src/util/dtw_c.c), which needs to be generated as a `.mex` file.
+
+- Go to `/src/util`
+- Mex the C code for DTW
+```
+mex dtw_c.c
+```
+
 ## Demonstration scripts
 ### Dataset
 - Plot LfD dataset [`/test/demo_lfd_dataset.m`](/test/demo_lfd_dataset.m)
