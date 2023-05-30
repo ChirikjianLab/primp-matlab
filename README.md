@@ -3,23 +3,23 @@ MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learnin
 
 Documentation is available in [ArXiv](https://arxiv.org/abs/2305.15761).
 
-# Authors
+## Authors
 Sipu Ruan (repository maintainer), Weixiao Liu, Xiaoli Wang, Xin Meng and Gregory S. Chirikjian
 
-# Dependency
+## Dependency
 - [Robotics Toolbox (RVC 2nd edition: RTB10+MVTB4 (2017))](https://petercorke.com/toolboxes/robotics-toolbox/)
 - [PbD Library](https://gitlab.idiap.ch/rli/pbdlib-matlab/)
 - [Orientation-KMP](https://github.com/yanlongtu/robInfLib-matlab)
 
-# Running instructions
-## Data preparation for LfD methods
+## Running instructions
+### Data preparation for LfD methods
 All test files are located in [`/test`](/test/) folder. To run scripts for LfD methods:
 
 - Generate `/data` folder that stores all demonstration data
 - Copy all the demonstration sets into the `/data` folder
 - Run scripts in `/test` folder
 
-## Source code for Orientation-KMP method
+### Source code for Orientation-KMP method
 To run Orientation-KMP method,
 
 - Clone from [Orientation-KMP Repository](https://github.com/yanlongtu/robInfLib-matlab)
@@ -29,11 +29,11 @@ addpath path-prefix/pbdlib-matlab/demos/m_fcts/
 addpath path-prefix/robInfLib-matlab/fcts/
 ```
 
-# Demonstration scripts
-## Dataset
+## Demonstration scripts
+### Dataset
 - Plot LfD dataset [`/test/demo_lfd_dataset.m`](/test/demo_lfd_dataset.m)
 
-## PRIMP
+### PRIMP
 - Encode demonstrations and condition on via poses [`/test/demo_primp_lfd.m`](/test/demo_primp_lfd.m)
 - LfD for scooping task [`/test/demo_primp_lfd_scooping.m`](/test/demo_primp_lfd_scooping.m)
 - Encode demonstrations with and without GORA [`/test/demo_primp_lfd_gora.m`](/test/demo_primp_lfd_gora.m)
@@ -41,10 +41,10 @@ addpath path-prefix/robInfLib-matlab/fcts/
 - Adaptation: Equivariance on the change of viewing frame [`/test/demo_primp_change_view.m`](/test/demo_primp_change_view.m)
 - Adaptation: Fusion with workspace density [`/test/demo_primp_lfd_fusion_wd.m`](/test/demo_primp_lfd_fusion_wd.m)
 
-## Orientation-KMP
+### Orientation-KMP
 - ncode demonstrations and condition on via poses [`/test/demo_kmp_lfd.m`](/test/demo_kmp_lfd.m)
 
-# Benchmark scripts
+## Benchmark scripts
 - Benchmark LfD for PRIMP [`/test/benchmark_lfd_primp.m`](/test/benchmark_lfd_primp.m)
 - Benchmark LfD for PRIMP with storage of learned trajectory distribution [`/test/benchmark_lfd_primp_trajectory.m`](/test/benchmark_lfd_primp_trajectory.m)
 - Benchmark for PRIMP on synthetic data between SE(3) and PCG(3) formulation [`/test/benchmark_primp_se_pcg.m`](/test/benchmark_primp_se_pcg.m)
