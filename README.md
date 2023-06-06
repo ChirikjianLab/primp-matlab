@@ -3,6 +3,8 @@ MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learnin
 
 Documentation is available in [ArXiv](https://arxiv.org/abs/2305.15761).
 
+Python implementation is available [here](https://github.com/ChirikjianLab/primp-python).
+
 ## Authors
 Sipu Ruan (repository maintainer), Weixiao Liu, Xiaoli Wang, Xin Meng and Gregory S. Chirikjian
 
@@ -15,6 +17,7 @@ Sipu Ruan (repository maintainer), Weixiao Liu, Xiaoli Wang, Xin Meng and Gregor
 ### Data preparation for LfD methods
 All test files are located in [`/test`](/test/) folder. To run scripts for LfD methods:
 
+- Download the data from [Google Drive](https://drive.google.com/drive/folders/1sgfAjBgO3PWO2nCqerXjVHsovpNF4MgS?usp=sharing). All the demonstrated datasets are locataed in `/demonstrations` folder.
 - Generate `/data` folder that stores all demonstration data
 - Copy all the demonstration sets into the `/data` folder
 - Run scripts in `/test` folder
