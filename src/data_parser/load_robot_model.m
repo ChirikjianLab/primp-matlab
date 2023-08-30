@@ -9,7 +9,7 @@ switch robot_name
 
     case 'ur5'
         robot_model_name = 'universalUR5';
-        ee_name = '';
+        ee_name = 'ee_link';
 
     case 'kinovaGen3'
         robot_model_name = 'kinovaGen3';

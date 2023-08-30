@@ -13,16 +13,16 @@ dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
 % Robot for execution
-robot_execute = ['panda_arm', 'kinovaGen3', 'universalUR10',...
+robot_execute = {'panda_arm', 'kinovaGen3', 'ur5',...
     'kukaIiwa7', 'abbYumi_right_arm', 'atlas_left_hand',...
-    'rethinkBaxter_right_hand', 'robotisOpenManipulator'];
+    'rethinkBaxter_right_hand', 'robotisOpenManipulator'};
 
 demo_type = load_dataset_param(dataset_name);
 
 %% Run ablations for each demo type
 for i = 1:length(robot_execute)
     for j = 1:length(demo_type)
-        run_ablation(robot_execute(i), dataset_name, demo_type{j});
+        run_ablation(robot_execute{i}, dataset_name, demo_type{j});
     end
 end
 
