@@ -221,12 +221,12 @@ disp(num2str( mean(metric_primp_dtw.d_via, 1) ))
 disp('---- Averaged computation time ----')
 disp(num2str( mean(metric_primp_dtw.time, 1) ))
 
+diary off
+
 % Computational time
 figure; hold on;
 t = [metric_primp.time, metric_primp_no_gora.time, metric_primp_dtw.time];
 boxplot(t)
 ylim([0, max(max(t))])
-
-diary off
 
 end
