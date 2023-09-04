@@ -31,7 +31,7 @@ n_sample = 5;
 n_step = 50;
 
 % Group name
-group_name = 'SE';
+group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
 VIA_POSE_SCALE.mean = 1;
@@ -44,10 +44,8 @@ is_generate_random = true;
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
 result_folder = strcat("../result/ablation/gora/", dataset_name, "/",...
     demo_type, "/");
-result_prefix = strcat(result_folder, 'primp_', group_name, '/');
 
 mkdir(result_folder);
-mkdir(result_prefix);
 
 %% Load and parse demo data
 argin.n_step = n_step;
@@ -176,7 +174,8 @@ end
 % Store results as .mat file
 res_filename = strcat(result_folder, "result_ablation_primp_gora.mat");
 save(res_filename, "res_primp", "res_primp_no_gora", "res_primp_dtw",...
-    "metric_primp", "metric_primp_no_gora", "metric_primp_dtw");
+    "metric_primp", "metric_primp_no_gora", "metric_primp_dtw",...
+    "group_name");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_ablation_primp_gora.txt");

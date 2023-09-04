@@ -8,7 +8,7 @@ function measure = compute_manipulability_from_ee_pose(pose, robot, ee_name)
 %   ee_name: Name of end effector
 %
 % Output
-%   measure: Computed manipulability measure
+%   measure: Computed manipulability measure ([rotation, translation])
 %
 % Author
 %   Sipu Ruan, 2023
@@ -21,15 +21,17 @@ ik = inverseKinematics('RigidBodyTree', robot);
 weights = [0.2, 0.2, 0.2, 1, 1, 1];
 q_init = robot.homeConfiguration;
 
-measure = zeros(1, n_step);
+measure = zeros(n_step, 2);
 for i = 1:n_step
     q = ik(ee_name, pose(:,:,i), weights, q_init);
     J = robot.geometricJacobian(q, ee_name);
 
-    % Compute Yoshimaya manipulability measure
-    m2 = det(J * J');
-    m2 = max(0, m2);    % clip it to positive
-    measure(i) = sqrt(m2);
+    % Compute Yoshikawa manipulability measure (split rotation and
+    % translation parts)
+    M = J * J';
+    m_rot = max(0, det(M(1:3,1:3)));
+    m_trans = max(0, det(M(4:6,4:6)));
+    measure(i,:) = [sqrt(m_rot), sqrt(m_trans)];
 
     % Start from prior solution
     q_init = q;

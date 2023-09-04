@@ -13,11 +13,12 @@ dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
 % Robot for execution
-robot_execute = {'panda_arm', 'kinovaGen3', 'ur5',...
-    'kukaIiwa7', 'abbYumi_right_arm', 'atlas_left_hand',...
-    'rethinkBaxter_right_hand', 'robotisOpenManipulator'};
+% robot_execute = {'panda_arm', 'kinovaGen3', 'ur5',...
+%     'kukaIiwa7', 'abbYumi_right_arm', 'atlas_left_hand',...
+%     'rethinkBaxter_right_hand', 'robotisOpenManipulator'};
+robot_execute = {'panda_arm', 'kinovaGen3', 'ur5', 'kukaIiwa7'};
 
-demo_type = load_dataset_param(dataset_name);
+demo_type = load_dataset_param(dataset_name, 5:9);
 
 %% Run ablations for each demo type
 for i = 1:length(robot_execute)
@@ -34,10 +35,10 @@ function run_ablation(robot_execute, dataset_name, demo_type)
 n_step = 50;
 
 % Number of sampled end effector poses
-n_state = 1000;
+n_state = 1e4;
 
 % Group name: 'SE', 'PCG'
-group_name = 'SE';
+group_name = 'PCG';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
@@ -84,7 +85,7 @@ primp_fused_obj = PRIMP(res_primp.mean.matrix, res_primp.covariance, param);
 [res_primp_fused.mean, res_primp_fused.covariance] =...
     primp_fused_obj.get_fusion_workspace_density(res_primp_fused.pdf_ee{end}.mean, res_primp_fused.pdf_ee{end}.cov);
 
-%% Compute Yoshimaya manipulability measure
+%% Compute Yoshikawa manipulability measure
 disp('>> Evaluation: manipulability')
 metric_primp.manipulability = compute_manipulability_from_ee_pose(res_primp.mean.matrix, mdl_execute, ee_name_execute);
 metric_primp_fused.manipulability = compute_manipulability_from_ee_pose(res_primp_fused.mean, mdl_execute, ee_name_execute);
@@ -93,10 +94,11 @@ metric_primp_fused.manipulability = compute_manipulability_from_ee_pose(res_prim
 % Store results as .mat file
 res_filename = strcat(result_folder, "result_ablation_primp_wd.mat");
 save(res_filename, "res_primp", "res_primp_fused", "metric_primp",...
-    "metric_primp_fused");
+    "metric_primp_fused", "group_name");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_ablation_primp_wd.txt");
+if exist(diary_filename, 'file') ; delete(diary_filename); end
 diary(diary_filename);
 
 disp('===============================================================')
@@ -106,13 +108,13 @@ disp('===============================================================')
 
 disp('>>>> PRIMP with workspace density adaptation <<<<')
 disp('---- Manipulability for mean trajectory ----')
-disp(num2str( metric_primp_fused.manipulability ))
+disp(num2str( mean(metric_primp_fused.manipulability, 1) ))
 
 disp('---------------------------------------------------------------')
 
 disp('>>>> PRIMP (ablated) <<<<')
 disp('---- Manipulability for mean trajectory ----')
-disp(num2str( metric_primp.manipulability ))
+disp(num2str( mean(metric_primp.manipulability, 1) ))
 
 diary off
 end
