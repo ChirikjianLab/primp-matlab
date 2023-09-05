@@ -23,4 +23,5 @@ for i = 1:n_step
     g_diff = get_rel_pose(mu, g(:,:,i), group_name);
     dist(i) = get_exp_coord(g_diff, group_name)' / cov *...
         get_exp_coord(g_diff, group_name);
+    dist(i) = sqrt(dist(i));
 end
