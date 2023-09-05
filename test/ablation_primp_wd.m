@@ -13,10 +13,10 @@ dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
 % Robot for execution
-% robot_execute = {'panda_arm', 'kinovaGen3', 'ur5',...
-%     'kukaIiwa7', 'abbYumi_right_arm', 'atlas_left_hand',...
-%     'rethinkBaxter_right_hand', 'robotisOpenManipulator'};
-robot_execute = {'panda_arm', 'kinovaGen3', 'ur5', 'kukaIiwa7'};
+robot_execute = {'panda_arm', 'kinovaGen3', 'ur5',...
+    'kukaIiwa7', 'abbYumi_right_arm', 'atlas_left_hand',...
+    'rethinkBaxter_right_hand', 'robotisOpenManipulator'};
+% robot_execute = {'panda_arm', 'kinovaGen3', 'ur5', 'kukaIiwa7'};
 
 demo_type = load_dataset_param(dataset_name, 5:9);
 
@@ -62,7 +62,8 @@ g_demo = parse_demo_trajectory(filenames, argin);
 [pose_ee, mdl_execute, ee_name_execute] = generate_robot_ee_pose(n_state, robot_execute);
 
 % Mean and covariance of the poses of each link
-res_primp_fused.pdf_ee = get_pdf_from_pose_SE(pose_ee);
+pdf_ee = get_pdf_from_pose_SE(pose_ee);
+pdf_ee = pdf_ee{end};
 
 %% Ablation study
 clc;
@@ -83,18 +84,23 @@ res_primp_fused.group_name = param.group_name;
 disp('Fusion with workspace density of robot arm')
 primp_fused_obj = PRIMP(res_primp.mean.matrix, res_primp.covariance, param);
 [res_primp_fused.mean, res_primp_fused.covariance] =...
-    primp_fused_obj.get_fusion_workspace_density(res_primp_fused.pdf_ee{end}.mean, res_primp_fused.pdf_ee{end}.cov);
+    primp_fused_obj.get_fusion_workspace_density(pdf_ee.mean, pdf_ee.cov);
 
 %% Compute Yoshikawa manipulability measure
 disp('>> Evaluation: manipulability')
 metric_primp.manipulability = compute_manipulability_from_ee_pose(res_primp.mean.matrix, mdl_execute, ee_name_execute);
 metric_primp_fused.manipulability = compute_manipulability_from_ee_pose(res_primp_fused.mean, mdl_execute, ee_name_execute);
 
+%% Compute Mahalanobis distance with workspace density
+disp('>> Evaluation: Mahalanobis distance with workspace density')
+metric_primp.distance = compute_mahalanobis_distance(res_primp.mean.matrix, pdf_ee.mean, pdf_ee.cov, group_name);
+metric_primp_fused.distance = compute_mahalanobis_distance(res_primp_fused.mean, pdf_ee.mean, pdf_ee.cov, group_name);
+
 %% Evaluation of ablation study
 % Store results as .mat file
 res_filename = strcat(result_folder, "result_ablation_primp_wd.mat");
 save(res_filename, "res_primp", "res_primp_fused", "metric_primp",...
-    "metric_primp_fused", "group_name");
+    "metric_primp_fused", "group_name", "pdf_ee");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_ablation_primp_wd.txt");
@@ -110,11 +116,17 @@ disp('>>>> PRIMP with workspace density adaptation <<<<')
 disp('---- Manipulability for mean trajectory ----')
 disp(num2str( mean(metric_primp_fused.manipulability, 1) ))
 
+disp('---- Mahalanobis distance to WD for mean trajectory ----')
+disp(num2str( mean(metric_primp_fused.distance, 1) ))
+
 disp('---------------------------------------------------------------')
 
 disp('>>>> PRIMP (ablated) <<<<')
 disp('---- Manipulability for mean trajectory ----')
 disp(num2str( mean(metric_primp.manipulability, 1) ))
+
+disp('---- Mahalanobis distance to WD for mean trajectory ----')
+disp(num2str( mean(metric_primp.distance, 1) ))
 
 diary off
 end
