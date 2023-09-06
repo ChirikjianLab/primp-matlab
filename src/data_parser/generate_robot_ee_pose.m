@@ -33,8 +33,11 @@ for j = 1:n_state
     g = getTransform(robot, config, ee_name, robot.BaseName);
 
     % Cartesian coordinates
-    pose.cartesian{1}(:,j) = [g(1:3,4); rotm2quat(g(1:3,1:3))'];
+    pose{1}.cartesian(:,j) = [g(1:3,4); rotm2quat(g(1:3,1:3))'];
 
     % exponential coordinates
-    pose.exponential{1}(:,j) = get_exp_coord(g);
+    pose{1}.exponential(:,j) = get_exp_coord(g);
+
+    % Matrix form
+    pose{1}.matrix(:,:,j) = g;
 end

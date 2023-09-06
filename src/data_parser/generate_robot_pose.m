@@ -60,5 +60,8 @@ for i = 1:num_link
 
         % exponential coordinates
         pose.exponential{i}(:,j) = get_exp_coord(g);
+
+        % Matrix form
+        pose.matrix{i}(:,:,j) = g;
     end
 end

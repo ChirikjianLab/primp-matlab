@@ -62,7 +62,7 @@ g_demo = parse_demo_trajectory(filenames, argin);
 [pose_ee, mdl_execute, ee_name_execute] = generate_robot_ee_pose(n_state, robot_execute);
 
 % Mean and covariance of the poses of each link
-pdf_ee = get_pdf_from_pose_SE(pose_ee);
+pdf_ee = get_pdf_from_pose(pose_ee, group_name);
 pdf_ee = pdf_ee{end};
 
 %% Ablation study
