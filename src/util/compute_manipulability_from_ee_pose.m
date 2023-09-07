@@ -21,17 +21,17 @@ ik = inverseKinematics('RigidBodyTree', robot);
 weights = [0.2, 0.2, 0.2, 1, 1, 1];
 q_init = robot.homeConfiguration;
 
-measure = zeros(n_step, 2);
+measure = zeros(n_step, 3);
 for i = 1:n_step
     q = ik(ee_name, pose(:,:,i), weights, q_init);
     J = robot.geometricJacobian(q, ee_name);
 
-    % Compute Yoshikawa manipulability measure (split rotation and
-    % translation parts)
+    % Compute Yoshikawa manipulability measure (including split rotation
+    % and translation parts)
     M = J * J';
     m_rot = max(0, det(M(1:3,1:3)));
     m_trans = max(0, det(M(4:6,4:6)));
-    measure(i,:) = [sqrt(m_rot), sqrt(m_trans)];
+    measure(i,:) = [sqrt(m_rot), sqrt(m_trans), sqrt( max(0, det(M)) )];
 
     % Start from prior solution
     q_init = q;
