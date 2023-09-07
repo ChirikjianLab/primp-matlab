@@ -2,12 +2,12 @@ function [pdf_conv, time_link] = get_pdf_conv_SE(pdf_link)
 % get_pdf_conv_SE Compute convolution of PDF to concatenate links
 %
 % Input
-%   pdf_link: Mean and covariance of PDF in SE(2)/SE(3) for each link 
-%             distal end
+%   pdf_link : Mean and covariance of PDF in SE(2)/SE(3) for each link 
+%              distal end
 %
 % Output
-%   pdf_conv: Mean and covariance of PDF for each link distal end after 
-%             convolution in SE(2)/SE(3)
+%   pdf_conv : Mean and covariance of PDF for each link distal end after 
+%              convolution in SE(2)/SE(3)
 %   time_link: Time spent on computing each convolution
 %
 % Author

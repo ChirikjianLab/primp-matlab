@@ -1,4 +1,4 @@
-function [pose, robot, end_effector] = generate_robot_pose(n_state, robot_name)
+function [pose, robot, ee_name] = generate_robot_pose(n_state, robot_name)
 % generate_robot_pose Generate poses of the distal end of each link
 % for a serial robot manipulator
 %
@@ -7,43 +7,24 @@ function [pose, robot, end_effector] = generate_robot_pose(n_state, robot_name)
 %   robot_name: Name of the robot, default: panda_arm
 %
 % Output
-%   pose: poses of the distal end of each link, a structure including
-%         Cartesian and exponential coordinates
+%   pose      : Poses of the distal end of each link, a structure including
+%               Cartesian and exponential coordinates
+%   robot     : Robot model in Robotics Toolbox
+%   ee_name   : Name of end effector
 %
 % Author
 %   Sipu Ruan, 2023
+%
+% Dependency
+%   Robotics System Toolbox
 
 % Robot parameters
 if nargin < 1
     n_state = 20;
 end
 
-if nargin < 2
-    robot_name = 'panda_arm';
-end
-
-robot_model_name = 'frankaEmikaPanda';
-num_link = 7;
-end_effector = 'panda_link8';
-
-switch robot_name
-    case 'ur10'
-        robot_model_name = 'universalUR10';
-        num_link = 6;
-        end_effector = '';
-
-    case 'kinovaGen3'
-        robot_model_name = 'kinovaGen3';
-        num_link = 7;
-        end_effector = 'EndEffector_Link';
-
-    case 'kukaIiwa7'
-        robot_model_name = 'kukaIiwa7';
-        num_link = 7;
-        end_effector = 'iiwa_link_ee';
-end
-
 % Load robot model
+[robot_model_name, ee_name, num_link] = load_robot_model(robot_name);
 robot = loadrobot(robot_model_name);
 
 % Discrete poses of each link distal end
@@ -79,5 +60,8 @@ for i = 1:num_link
 
         % exponential coordinates
         pose.exponential{i}(:,j) = get_exp_coord(g);
+
+        % Matrix form
+        pose.matrix{i}(:,:,j) = g;
     end
 end

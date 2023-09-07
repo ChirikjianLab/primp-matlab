@@ -89,5 +89,11 @@ switch method
     case 'so3'
         % Geodesic distance on SO(3)
         d = norm(logm_SO(s' * t));
+
+    case 'se3'
+        % Geodesic distance on SO(3)
+        d = norm(get_exp_coord(s \ t));
 end
+
+d = d^2;
 end
