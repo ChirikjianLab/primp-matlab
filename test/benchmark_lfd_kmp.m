@@ -10,7 +10,7 @@ addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
 
 % Name of the dataset
 dataset_name = 'panda_arm';
-% dataset_name = 'lasa_handwriting/pose_data';
+% dataset_name = 'lasa_handriting/pose_data';
 
 demo_type = load_dataset_param(dataset_name);
 
@@ -38,7 +38,7 @@ n_state = 8;
 % KMP parameters
 lamda = 1;  % control mean prediction
 lamdac = 60; % control variance prediction
-kh = [0.01, 0.1, 10]; % Scale of Gaussian kernel basis
+kh = [0.1, 1, 10]; % Scale of Gaussian kernel basis
 
 % Scaling of via pose mean and covariance
 VIA_POSE_SCALE.mean = 1;
@@ -93,9 +93,10 @@ for j = 1:length(kh)
 
     for i = 1:n_trial
         clc;
-        disp('Benchmark: Orientation KMP')
+        disp('Benchmark: Kernalized Movement Primitives')
         disp(['Dataset: ', dataset_name])
         disp(['Demo type: ', demo_type])
+        disp(['Regularization: ', num2str(param.kmp_param.lamda)]); 
         disp(['Kernel scale: ', num2str(param.kmp_param.kh)]);
         disp([num2str(i/(n_trial) * 100), '%'])
 
@@ -110,17 +111,17 @@ for j = 1:length(kh)
         %%%%%%%%%%%%%%%%%%%%%% Using KMP method %%%%%%%%%%%%%%%%%%%%%%%%%%%
         t_start = tic;
 
-        kmp = KernalizedMovementPrimitives(g_demo, model, param);
+        kmp_obj = kmp(g_demo, model, param);
 
         % Condition on goal pose
-        kmp.compute_kmp_via_point(g_goal, cov_goal, 1.0);
-        traj_kmp_goal = kmp.get_kmp_trajectory();
-        g_samples_kmp_goal = kmp.get_samples(traj_kmp_goal, n_sample);
+        kmp_obj.compute_kmp_via_point(g_goal, cov_goal, 1.0);
+        traj_kmp_goal = kmp_obj.get_kmp_trajectory();
+        g_samples_kmp_goal = kmp_obj.get_samples(traj_kmp_goal, n_sample);
 
         % Condition on via pose
-        kmp.compute_kmp_via_point(g_via, cov_via, t_via);
-        traj_kmp_via = kmp.get_kmp_trajectory();
-        g_samples_kmp_via = kmp.get_samples(traj_kmp_via, n_sample);
+        kmp_obj.compute_kmp_via_point(g_via, cov_via, t_via);
+        traj_kmp_via = kmp_obj.get_kmp_trajectory();
+        g_samples_kmp_via = kmp_obj.get_samples(traj_kmp_via, n_sample);
 
         t_kmp(i,j) = toc(t_start);
 
@@ -146,13 +147,16 @@ for j = 1:length(kh)
 end
 
 %% Evaluation of benchmarks
+result_filename = "result_lfd_kmp";
+
 % Store distance results
-res_filename = strcat(result_folder, "result_lfd_orientation_kmp.mat");
+res_filename = strcat(result_folder, result_filename, ".mat");
 save(res_filename, "t_kmp", "d_demo_kmp", "d_via_kmp",...
     "n_state", "param");
 
 % Display and store command window
-diary_filename = strcat(result_folder, "result_lfd_orientation_kmp.txt");
+diary_filename = strcat(result_folder, result_filename, ".txt");
+if exist(diary_filename, 'file') ; delete(diary_filename); end
 diary(diary_filename);
 
 disp('===============================================================')

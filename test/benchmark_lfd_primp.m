@@ -145,6 +145,7 @@ save(res_filename, "t", "d_demo", "d_via");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_lfd_primp.txt");
+if exist(diary_filename, 'file') ; delete(diary_filename); end
 diary(diary_filename);
 
 for j = 1:length(group_name)

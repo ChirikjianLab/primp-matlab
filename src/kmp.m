@@ -1,5 +1,5 @@
-classdef KernalizedMovementPrimitives < handle
-    % KernelizedMovementPrimitives Wrapper class for Orientation-KMP
+classdef kmp < handle
+    % kmp Wrapper class for Kernalized MP (KMP) and Orientation-KMP
     %
     % Author
     %   Sipu Ruan, 2022
@@ -36,7 +36,7 @@ classdef KernalizedMovementPrimitives < handle
     end
 
     methods
-        function obj = KernalizedMovementPrimitives(g_demo, model, param)
+        function obj = kmp(g_demo, model, param)
             obj.g_demo = g_demo;
             obj.n_demo = length(g_demo);
 
@@ -55,7 +55,7 @@ classdef KernalizedMovementPrimitives < handle
             obj.model.nbVar = 1+2*obj.dim;
 
             % Learn GMM/GMR model
-            obj.learn_gmm();
+            obj.learn();
         end
 
         %% Getter functions
@@ -121,7 +121,7 @@ classdef KernalizedMovementPrimitives < handle
         end
 
         %% Learning reference trajectory using GMM/GMR
-        function learn_gmm(obj)
+        function learn(obj)
             % Extract pose in exponential coordinates of PCG(3)
             data_in = zeros(1+2*obj.dim, obj.n_demo*obj.n_step);
             dt = 1/obj.n_step;
@@ -130,8 +130,8 @@ classdef KernalizedMovementPrimitives < handle
                 for j = 1:obj.n_step
                     idx = idx+1;
                     data_in(1,idx) = j*dt;
-                    data_in(2:4, idx) = obj.g_demo{i}.exponential(1:3,j);
-                    data_in(5:7, idx) = obj.g_demo{i}.exponential(4:6,j);
+                    data_in(2:4, idx) = obj.g_demo{i}.exponential(1:3, j);
+                    data_in(5:7, idx) = obj.g_demo{i}.exponential(4:6, j);
                 end
 
                 lowIndex = (i-1)*obj.n_step+1;
