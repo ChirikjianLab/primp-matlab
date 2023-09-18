@@ -1,4 +1,4 @@
-% Benchmark script for Orientation-KMP
+% Benchmark script for Kernelized Movement Primitives
 %
 %  Author
 %    Sipu Ruan, 2023
@@ -9,8 +9,8 @@ addpath ../../../Toolbox/learn_from_demo/pbdlib-matlab/demos/m_fcts/
 addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
 
 % Name of the dataset
-dataset_name = 'panda_arm';
-% dataset_name = 'lasa_handriting/pose_data';
+% dataset_name = 'panda_arm';
+dataset_name = 'lasa_handwriting/pose_data';
 
 demo_type = load_dataset_param(dataset_name);
 
@@ -23,9 +23,6 @@ function run_benchmark(dataset_name, demo_type)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tunable parameters
 % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-% Number of benchmark trials
-n_trial = 50;
-
 % Number of samples on distribution
 n_sample = 50;
 
@@ -39,13 +36,6 @@ n_state = 8;
 lamda = 1;  % control mean prediction
 lamdac = 60; % control variance prediction
 kh = [0.1, 1, 10]; % Scale of Gaussian kernel basis
-
-% Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
-VIA_POSE_SCALE.covariance = 1e-4;
-
-% Indicator of whether to generate random via/goal poses
-is_generate_random = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
@@ -66,22 +56,9 @@ argin.group_name = 'PCG';
 filenames = dir(strcat(argin.data_folder, "*.json"));
 g_demo = parse_demo_trajectory(filenames, argin);
 
-% Generate or load random via/goal poses
-if is_generate_random
-    mkdir(result_folder);
-
-    % Generate random via/goal poses
-    trials = generate_random_trials(g_demo{1}, n_trial,...
-        VIA_POSE_SCALE, result_folder);
-
-    disp("Generated random configurations!")
-else
-    % Load random configurations for conditioning
-    trials = load_random_trials(result_folder);
-    n_trial = length(trials.t_via{1});
-
-    disp("Loaded randomly generated configurations!");
-end
+% Load random configurations for conditioning
+trials = load_random_trials(result_folder);
+n_trial = length(trials.t_via{1});
 
 %% Benchmark
 res_kmp_goal = cell(n_trial, 1);
@@ -147,7 +124,7 @@ for j = 1:length(kh)
 end
 
 %% Evaluation of benchmarks
-result_filename = "result_lfd_kmp";
+result_filename = "result_lfd_kmp_lamda_1";
 
 % Store distance results
 res_filename = strcat(result_folder, result_filename, ".mat");

@@ -31,7 +31,7 @@ for j = 1:n_via
     end
 
     % Store poses
-    if nargin > 4
+    if nargin > 3
         trials_via.t_via = trials.t_via{j};
         trials_via.g_via = permute(trials.g_via{j}, [3,1,2]);
         trials_via.cov_via = permute(trials.cov_via{j}, [3,1,2]);
