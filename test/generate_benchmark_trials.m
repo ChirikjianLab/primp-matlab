@@ -7,8 +7,13 @@ close all; clear; clc;
 
 dataset_name = {'panda_arm', 'lasa_handwriting/pose_data'};
 n_trial = 50;
+
 scale.mean = zeros(6,1);
 scale.covariance = 1e-4;
+
+% Factor for extrapolation
+lambda_ex = 0;
+% lambda_ex = 10;
 
 for j = 1:length(dataset_name)
     demo_types = load_dataset_param(dataset_name{j});
@@ -16,11 +21,11 @@ for j = 1:length(dataset_name)
     % Via point deviation based on dataset name
     switch dataset_name{j}
         case 'panda_arm'
-            scale.mean(1:3) = 1e-4 * ones(3,1);
-            scale.mean(4:6) = 1e-3 * rand(3,1);
+            scale.mean(1:3) = 1e-4 * ones(3,1) * lambda_ex;
+            scale.mean(4:6) = 1e-3 * rand(3,1) + lambda_ex;
 
         case 'lasa_handwriting/pose_data'
-            scale.mean(4:6) = [1e-3 * rand(2,1); 0];
+            scale.mean(4:6) = [1e-3 * rand(2,1) + lambda_ex; 0];
     end
 
     for i = 1:length(demo_types)
