@@ -2,79 +2,46 @@
 %
 %  Author
 %    Sipu Ruan, 2023
+
 close all; clear; clc;
 add_paths()
 
 % Name of the dataset
-dataset_name = 'panda_arm';
-% dataset_name = 'lasa_handwriting/pose_data';
+% dataset_name = 'panda_arm';
+dataset_name = 'lasa_handwriting/pose_data';
 
 demo_type = load_dataset_param(dataset_name);
 
-%% Run benchmark for each demo type
 for i = 1:length(demo_type)
     run_benchmark(dataset_name, demo_type{i});
 end
 
+%% Run benchmark for each demo type
 function run_benchmark(dataset_name, demo_type)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Tunable parameters
-% ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-% Number of benchmark trials
-n_trial = 50;
-
-% Number of samples on distribution
-n_sample = 50;
-
-% Number of time steps
-n_step = 50;
-
-% Group name
 group_name = {'SE', 'PCG'};
-
-% Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
-VIA_POSE_SCALE.covariance = 1e-4;
-
-% Indicator of whether to generate random via/goal poses
-is_generate_random = true;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
 result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/");
 
-mkdir(result_folder);
-
 %% Load and parse demo data
-argin.n_step = n_step;
+argin.n_step = 50;
 argin.data_folder = data_folder;
 argin.group_name = 'SE';
 
 filenames = dir(strcat(argin.data_folder, "*.json"));
 g_demo = parse_demo_trajectory(filenames, argin);
 
-% Generate or load random via/goal poses
-if is_generate_random
-    mkdir(result_folder);
-
-    % Generate random via/goal poses
-    trials = generate_random_trials(g_demo{1}, n_trial, VIA_POSE_SCALE,...
-        result_folder);
-
-    disp("Generated random configurations!")
-else
-    % Load random configurations for conditioning
-    trials = load_random_trials(result_folder);
-    n_trial = length(trials.t_via{1});
-
-    disp("Loaded randomly generated configurations!");
-end
+% Load random configurations for conditioning
+trials = load_random_trials(result_folder);
+n_trial = length(trials.t_via{1});
 
 %% Benchmark
 res_goal = cell(n_trial, length(group_name));
 res_via = cell(n_trial, length(group_name));
 
 for j = 1:length(group_name)
+    param.n_sample = 50;
+    param.group_name = group_name{j};
+
     % Compute trajectory distribution from demonstrations
     [g_mean, cov_t] = get_pdf_from_demo(g_demo, group_name{j});
 
@@ -96,9 +63,6 @@ for j = 1:length(group_name)
         cov_via = trials.cov_via{2}(:,:,i);
 
         % Initiate class
-        param.n_sample = n_sample;
-        param.group_name = group_name{j};
-
         res_goal{i,j}.group_name = param.group_name;
         res_via{i,j}.group_name = param.group_name;
 
@@ -145,6 +109,7 @@ save(res_filename, "t", "d_demo", "d_via");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_lfd_primp.txt");
+if exist(diary_filename, 'file') ; delete(diary_filename); end
 diary(diary_filename);
 
 for j = 1:length(group_name)

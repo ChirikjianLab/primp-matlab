@@ -5,7 +5,7 @@ function trials = generate_random_trials(g_demo, n_trial, scale, folder)
 %  Input
 %    g_demo : Structure of pose info
 %    n_trial: Number of trials
-%    scale  : Scale of the mean and covariance
+%    dataset: Name of dataset
 %    folder : Folder that stores the generated trials
 %
 %  Output
@@ -30,6 +30,8 @@ for i = 1:n_trial
 
 end
 
+disp("Generated random configurations!")
+
 % Store poses
 if nargin > 3
     % Goal poses
@@ -50,5 +52,7 @@ if nargin > 3
     fid = fopen(strcat(folder, 'trials_random_via.json'), 'w');
     fprintf(fid, '%s', json_data);
     fclose(fid);
+
+    disp("Stored random configurations!")
 end
 end

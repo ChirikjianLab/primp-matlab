@@ -179,6 +179,7 @@ save(res_filename, "res_primp", "res_primp_no_gora", "res_primp_dtw",...
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_ablation_primp_gora.txt");
+if exist(diary_filename, 'file') ; delete(diary_filename); end
 diary(diary_filename);
 
 disp('===============================================================')

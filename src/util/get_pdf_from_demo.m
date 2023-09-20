@@ -46,11 +46,6 @@ for i = 1:n_step
     end
 end
 
-% Apply GORA for optimal mean trajectory
-gora_obj = gora(g_mean_matrix{1}, n_step);
-gora_obj.run();
-g_mean_matrix{1} = gora_obj.g_opt;
-
 g_mean = generate_pose_struct(g_mean_matrix, group_name);
 g_mean = g_mean{1};
 
