@@ -9,14 +9,22 @@ addpath ../../../Toolbox/learn_from_demo/pbdlib-matlab/demos/m_fcts/
 addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
 
 % Name of the dataset
-% dataset_name = 'panda_arm';
-dataset_name = 'lasa_handwriting/pose_data';
+dataset_name = {'panda_arm', 'lasa_handwriting/pose_data'};
 
-demo_type = load_dataset_param(dataset_name);
+for j = 1:length(dataset_name)
+    % Name of demo types
+    demo_type = load_dataset_param(dataset_name{j});
 
-%% Run benchmark for each demo type
-for i = 1:length(demo_type)
-    run_benchmark(dataset_name, demo_type{i});
+    for i = 1:length(demo_type)
+        disp('Benchmark: Kernalized Movement Primitives')
+        disp(['Dataset: ', dataset_name{j}, ' (', num2str(j), '/', num2str(length(dataset_name)), ')'])
+        disp(['Demo type: ', demo_type{i}, ' (', num2str(i), '/', num2str(length(demo_type)), ')'])
+
+        % Run benchmark for each demo type
+        run_benchmark(dataset_name{j}, demo_type{i});
+
+        clc;
+    end
 end
 
 function run_benchmark(dataset_name, demo_type)
@@ -33,7 +41,7 @@ n_step = 50;
 n_state = 8;
 
 % KMP parameters
-lamda = 1;  % control mean prediction
+lamda = 1e-2;  % control mean prediction
 lamdac = 60; % control variance prediction
 kh = [0.1, 1, 10]; % Scale of Gaussian kernel basis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,14 +73,9 @@ res_kmp_via_1 = cell(n_trial, 1);
 res_kmp_via_2 = cell(n_trial, 1);
 
 for j = 1:length(kh)
-
     param.kmp_param.kh = kh(j);
 
     for i = 1:n_trial
-        clc;
-        disp('Benchmark: Kernalized Movement Primitives')
-        disp(['Dataset: ', dataset_name])
-        disp(['Demo type: ', demo_type])
         disp(['Regularization: ', num2str(param.kmp_param.lamda)]); 
         disp(['Kernel scale: ', num2str(param.kmp_param.kh)]);
         disp([num2str(i/(n_trial) * 100), '%'])
@@ -125,7 +128,7 @@ for j = 1:length(kh)
 end
 
 %% Evaluation of benchmarks
-result_filename = "result_lfd_kmp_lamda_1";
+result_filename = "result_lfd_kmp_lamda_1e-2";
 
 % Store distance results
 res_filename = strcat(result_folder, result_filename, ".mat");

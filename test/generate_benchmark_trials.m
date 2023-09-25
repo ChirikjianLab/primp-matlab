@@ -22,7 +22,7 @@ for j = 1:length(dataset_name)
     % Via point deviation based on dataset name
     switch dataset_name{j}
         case 'panda_arm'
-            scale.mean(1:3) = 1e-4 * ones(3,1) * (lamdba_ex + 1);
+            scale.mean(1:3) = 1e-4 * ones(3,1) * (lambda_ex + 1);
             scale.mean(4:6) = 1e-3 * rand(3,1) + lambda_ex;
 
         case 'lasa_handwriting/pose_data'
@@ -55,8 +55,8 @@ g_demo = parse_demo_trajectory(filenames, argin);
 % Generate random goal/via points
 id_demo = ceil(rand*length(g_demo));
 
-% t_via = [ones(n_trial, 1), rand(n_trial, 1)];
-t_via = [zeros(n_trial, 1), ones(n_trial, 1)];
+t_via = [ones(n_trial, 1), rand(n_trial, 1)];
+% t_via = [zeros(n_trial, 1), ones(n_trial, 1)];
 
 trials = generate_random_trials(g_demo{id_demo}, t_via, scale, result_folder);
 

@@ -7,13 +7,22 @@ close all; clear; clc;
 add_paths()
 
 % Name of the dataset
-% dataset_name = 'panda_arm';
-dataset_name = 'lasa_handwriting/pose_data';
+dataset_name = {'panda_arm', 'lasa_handwriting/pose_data'};
 
-demo_type = load_dataset_param(dataset_name);
+for j = 1:length(dataset_name)
+    % Name of demo types
+    demo_type = load_dataset_param(dataset_name{j});
 
-for i = 1:length(demo_type)
-    run_benchmark(dataset_name, demo_type{i});
+    for i = 1:length(demo_type)
+        disp('Benchmark: PRIMP (ours)')
+        disp(['Dataset: ', dataset_name{j}, ' (', num2str(j), '/', num2str(length(dataset_name)), ')'])
+        disp(['Demo type: ', demo_type{i}, ' (', num2str(i), '/', num2str(length(demo_type)), ')'])
+
+        % Run benchmark for each demo in each dataset
+        run_benchmark(dataset_name{j}, demo_type{i});
+
+        clc;
+    end
 end
 
 %% Run benchmark for each demo type
@@ -46,10 +55,6 @@ for j = 1:length(group_name)
     [g_mean, cov_t] = get_pdf_from_demo(g_demo, group_name{j});
 
     for i = 1:n_trial
-        clc;
-        disp('Benchmark: PRIMP (ours)')
-        disp(['Dataset: ', dataset_name])
-        disp(['Demo type: ', demo_type])
         disp(['Group (', num2str(j), '/', num2str(length(group_name)),...
             '): ', group_name{j}])
         disp([num2str(i/(n_trial) * 100), '%'])
