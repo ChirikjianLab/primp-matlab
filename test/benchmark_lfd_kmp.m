@@ -132,8 +132,7 @@ result_filename = "result_lfd_kmp_lamda_1e-2";
 
 % Store distance results
 res_filename = strcat(result_folder, result_filename, ".mat");
-save(res_filename, "t_kmp", "d_demo_kmp", "d_via_kmp", "res_kmp_via_1",...
-    "res_kmp_via_2", "n_state", "param");
+save(res_filename, "t_kmp", "d_demo_kmp", "d_via_kmp", "n_state", "param");
 
 % Display and store command window
 diary_filename = strcat(result_folder, result_filename, ".txt");

@@ -110,7 +110,7 @@ end
 %% Evaluation of benchmarks
 % Store distance results
 res_filename = strcat(result_folder, "result_lfd_primp.mat");
-save(res_filename, "t", "d_demo", "d_via", "res_via_1", "res_via_2");
+save(res_filename, "t", "d_demo", "d_via");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_lfd_primp.txt");
