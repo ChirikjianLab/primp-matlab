@@ -31,16 +31,16 @@ dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
 % Type of demonstration
-demo_type = "simulation/circle";
-% demo_type = "real/pouring/default";
+% demo_type = "simulation/circle";
+demo_type = "real/pouring/default";
 % demo_type = "Snake";
 % demo_type = "real/scooping/default";
 
 % Group name: 'SE', 'PCG'
-group_name = 'SE';
+group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
+VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
 VIA_POSE_SCALE.covariance = 1e-5;
 
 % Indicator of whether to generate random via/goal poses
@@ -48,8 +48,7 @@ is_generate_random = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
-result_folder = strcat("../result/", dataset_name, "/", demo_type, "/");
-mkdir(result_folder);
+result_folder = strcat("../result/demo/", dataset_name, "/", demo_type, "/");
 
 %% Load demo data and compute mean/covariance
 argin.n_step = n_step;
@@ -64,8 +63,8 @@ if is_generate_random
     mkdir(result_folder);
 
     % Generate random via/goal poses
-    trials = generate_random_trials(g_demo{1}, 1, VIA_POSE_SCALE,...
-        result_folder);
+    trials = generate_random_trials(g_demo{1}, [1, rand()],...
+        VIA_POSE_SCALE, result_folder);
 
     disp("Generated random configurations!")
 else
