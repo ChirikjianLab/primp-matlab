@@ -113,9 +113,9 @@ for j = 1:length(group_name)
             evaluate_traj_distribution(res_primp{i,j}, res_primp_single{i,j});
 
         % Distance to desired pose
-        d_via.via_1(i,:,j) =...
+        d_via.full_dataset(i,:,j) =...
             evaluate_desired_pose(res_primp{i,j}, g_via_1, t_via_1);
-        d_via.via_2(i,:,j) =...
+        d_via.single_demo(i,:,j) =...
             evaluate_desired_pose(res_primp_single{i,j}, g_via_2, t_via_2);
     end
 
@@ -139,7 +139,11 @@ for j = 1:length(group_name)
     disp(num2str( mean(d_sim(:,:,j), 1) ))
 
     disp('---- Distance to desired pose (rot, tran):')
-    disp(num2str( mean(d_via.via_2(:,:,j), 1) ))
+    disp('>> PRIMP with full dataset')
+    disp(num2str( mean(d_via.full_dataset(:,:,j), 1) ))
+
+    disp(">> PRIMP with single demonstration")
+    disp(num2str( mean(d_via.single_demo(:,:,j), 1) ))
 end
 
 diary off
