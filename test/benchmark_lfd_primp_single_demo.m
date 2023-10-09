@@ -1,4 +1,4 @@
-% Benchmark script for PRIMP
+% Benchmark script for PRIMP learned from a single demonstration
 %
 %  Author
 %    Sipu Ruan, 2023
@@ -44,8 +44,8 @@ trials = load_random_trials(result_folder);
 n_trial = length(trials.t_via{1});
 
 %% Benchmark
-res_via_1 = cell(n_trial, length(group_name));
-res_via_2 = cell(n_trial, length(group_name));
+res_primp = cell(n_trial, length(group_name));
+res_primp_single_demo = cell(n_trial, length(group_name));
 
 for j = 1:length(group_name)
     param.n_sample = 50;
@@ -69,8 +69,8 @@ for j = 1:length(group_name)
         cov_via_2 = trials.cov_via{2}(:,:,i);
 
         % Initiate class
-        res_via_1{i,j}.group_name = param.group_name;
-        res_via_2{i,j}.group_name = param.group_name;
+        res_primp{i,j}.group_name = param.group_name;
+        res_primp_single_demo{i,j}.group_name = param.group_name;
 
         t_start = tic;
 
@@ -78,31 +78,57 @@ for j = 1:length(group_name)
 
         % Condition on via-point poses
         primp_obj.get_condition_pdf(t_via_1, g_via_1, cov_via_1);
-        g_samples_1 = primp_obj.get_samples();
-
-        primp_obj.get_condition_pdf(t_via_2, g_via_2, cov_via_2);
-        g_samples_2 = primp_obj.get_samples();
+        mean_traj{1} = primp_obj.get_condition_pdf(t_via_2, g_via_2, cov_via_2);
+        g_samples = primp_obj.get_samples();
 
         t(i,j) = toc(t_start);
 
+        % Use a single random demonstration
+        t_start = tic;
+
+        cov_t_single = nan(size(cov_t));
+        for k = 1:size(cov_t_single, 3)
+            cov_t_single(:,:,k) = 1e-4 * eye(6);
+        end
+
+        idx_demo = ceil(length(g_demo) * rand());
+        g_demo_single{1} = g_demo{idx_demo};
+        primp_single_obj = PRIMP(g_demo_single{1}.matrix, cov_t_single, param);
+
+        % Condition on via-point poses
+        primp_single_obj.get_condition_pdf(t_via_1, g_via_1, cov_via_1);
+        mean_traj_single_demo{1} = primp_single_obj.get_condition_pdf(...
+            t_via_2, g_via_2, cov_via_2);
+        g_samples_single_demo = primp_single_obj.get_samples();
+
+        t_single(i,j) = toc(t_start);
+
         %% Distance to desired pose and original trajectory
         % Convert to group structure
-        res_via_1{i,j} =...
-            generate_pose_struct(g_samples_1, param.group_name);
-        res_via_2{i,j} =...
-            generate_pose_struct(g_samples_2, param.group_name);
+        res_primp{i,j}.mean =...
+            generate_pose_struct(mean_traj, param.group_name);
+        res_primp{i,j}.samples =...
+            generate_pose_struct(g_samples, param.group_name);
+        res_primp_single_demo{i,j}.mean =...
+            generate_pose_struct(mean_traj_single_demo, param.group_name);
+        res_primp_single_demo{i,j}.samples =...
+            generate_pose_struct(g_samples_single_demo, param.group_name);
 
-        % Distance to demonstrated trajectories
-        d_demo.via_1(i,:,j) =...
-            evaluate_traj_distribution(res_via_1{i,j}, g_demo);
-        d_demo.via_2(i,:,j) =...
-            evaluate_traj_distribution(res_via_2{i,j}, g_demo);
+        % Similarity to PRIMP learned from full dataset
+        d_sim(i,:,j) =...
+            evaluate_traj_distribution(res_primp_single_demo{i,j}.mean,...
+            res_primp{i,j}.mean);
+
+        % Similarity to the selected demo
+        d_demo(i,:,j) =...
+            evaluate_traj_distribution(res_primp_single_demo{i,j}.samples,...
+            g_demo_single);
 
         % Distance to desired pose
-        d_via.via_1(i,:,j) =...
-            evaluate_desired_pose(res_via_1{i,j}, g_via_1, t_via_1);
-        d_via.via_2(i,:,j) =...
-            evaluate_desired_pose(res_via_2{i,j}, g_via_2, t_via_2);
+        d_via.full_dataset(i,:,j) = evaluate_desired_pose(...
+            res_primp{i,j}.samples, g_via_2, t_via_2);
+        d_via.single_demo(i,:,j) = evaluate_desired_pose(...
+            res_primp_single_demo{i,j}.samples, g_via_2, t_via_2);
     end
 
 end
@@ -110,7 +136,7 @@ end
 %% Evaluation of benchmarks
 % Store distance results
 res_filename = strcat(result_folder, "result_lfd_primp.mat");
-save(res_filename, "t", "d_demo", "d_via");
+save(res_filename, "t", "t_single", "d_sim", "d_demo", "d_via");
 
 % Display and store command window
 diary_filename = strcat(result_folder, "result_lfd_primp.txt");
@@ -121,30 +147,19 @@ for j = 1:length(group_name)
     disp('===============================================================')
     disp(['Group: ', group_name{j}])
 
-    disp('>>>> Condition on 1 via point <<<<')
-    disp('---- Distance to demo (rot, tran):')
-    disp(num2str( mean(d_demo.via_1(:,:,j), 1) ))
+    disp('---- Similarity to PRIMP learned from full dataset (rot, tran):')
+    disp(num2str( mean(d_sim(:,:,j), 1) ))
+
+    disp('---- Similarity to the selected demonstration (rot, tran):')
+    disp(num2str( mean(d_demo(:,:,j), 1) ))
 
     disp('---- Distance to desired pose (rot, tran):')
-    disp(num2str( mean(d_via.via_1(:,:,j), 1) ))
+    disp('>> PRIMP with full dataset')
+    disp(num2str( mean(d_via.full_dataset(:,:,j), 1) ))
 
-    disp('---------------------------------------------------------------')
-
-    disp('>>>> Condition on 2 via points <<<<')
-    disp('---- Distance to demo (rot, tran):')
-    disp(num2str( mean(d_demo.via_2(:,:,j), 1) ))
-
-    disp('---- Distance to desired pose (rot, tran):')
-    disp(num2str( mean(d_via.via_2(:,:,j), 1) ))
+    disp(">> PRIMP with single demonstration")
+    disp(num2str( mean(d_via.single_demo(:,:,j), 1) ))
 end
-
-% Computational time
-figure; hold on;
-
-disp('>>>> Computation time <<<<')
-disp(num2str( mean(t,1) ))
-boxplot(t)
-ylim([0, max(max(t))])
 
 diary off
 end

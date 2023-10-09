@@ -4,12 +4,13 @@
 %    Sipu Ruan, 2023
 
 close all; clear; clc;
+add_paths()
 
 dataset_name = {'panda_arm', 'lasa_handwriting/pose_data'};
 n_trial = 50;
 
 scale.mean = zeros(6,1);
-scale.covariance = 1e-4;
+scale.covariance = 1e-5;
 
 % Factor for extrapolation
 lambda_ex = 0;
@@ -21,7 +22,7 @@ for j = 1:length(dataset_name)
     % Via point deviation based on dataset name
     switch dataset_name{j}
         case 'panda_arm'
-            scale.mean(1:3) = 1e-4 * ones(3,1) * lambda_ex;
+            scale.mean(1:3) = 1e-4 * ones(3,1) * (lambda_ex + 1);
             scale.mean(4:6) = 1e-3 * rand(3,1) + lambda_ex;
 
         case 'lasa_handwriting/pose_data'
@@ -53,7 +54,11 @@ g_demo = parse_demo_trajectory(filenames, argin);
 
 % Generate random goal/via points
 id_demo = ceil(rand*length(g_demo));
-trials = generate_random_trials(g_demo{id_demo}, n_trial, scale, result_folder);
+
+t_via = [ones(n_trial, 1), rand(n_trial, 1)];
+% t_via = [zeros(n_trial, 1), ones(n_trial, 1)];
+
+trials = generate_random_trials(g_demo{id_demo}, t_via, scale, result_folder);
 
 if isplot
     % Plot trials

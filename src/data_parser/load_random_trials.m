@@ -1,20 +1,18 @@
-function trials = load_random_trials(config_folder)
+function trials = load_random_trials(config_folder, n_via)
 
-trials_goal_filename = strcat(config_folder, "trials_random_goal.json");
-trials_via_filename = strcat(config_folder, "trials_random_via.json");
+if nargin < 2
+    n_via = 2;
+end
 
-% Load generated goal configurations
-goal_file = jsondecode(fileread(trials_goal_filename));
+for i = 1:n_via
+    trials_filename = strcat(config_folder, "trials_random_via_",...
+        num2str(i), ".json");
 
-% Reshape the 3D matrix
-trials.g_via{1} = permute(goal_file.g_goal, [2,3,1]);
-trials.cov_via{1} = permute(goal_file.cov_goal, [2,3,1]);
-trials.t_via{1} = ones(1, size(trials.g_via{1}, 3));
+    % Load generated via point configurations
+    file = jsondecode(fileread(trials_filename));
 
-% Load generated via pose configurations
-via_file = jsondecode(fileread(trials_via_filename));
-
-% Reshape the 3D matrix
-trials.g_via{2} = permute(via_file.g_via, [2,3,1]);
-trials.cov_via{2} = permute(via_file.cov_via, [2,3,1]);
-trials.t_via{2} = via_file.t_via';
+    % Reshape the 3D matrix
+    trials.g_via{i} = permute(file.g_via, [2,3,1]);
+    trials.cov_via{i} = permute(file.cov_via, [2,3,1]);
+    trials.t_via{i} = file.t_via';
+end

@@ -1,4 +1,4 @@
-% Benchmark script for extrapolation between PRIMP and Orientation-KMP
+% Demo script for extrapolation between PRIMP and Orientation-KMP
 %  Demonstration data input from "/data" folder in ".json" format. Plot 
 % results from PRIMP and Orientation-KMP when via poses are out of
 % distribution.
@@ -47,7 +47,7 @@ VIA_POSE_SCALE.covariance = 1e-4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
-result_folder = strcat("../result/", dataset_name, "/", demo_type, "/");
+result_folder = strcat("../result/extrapolation/", dataset_name, "/", demo_type, "/");
 mkdir(result_folder);
 
 %% Load demo data and compute mean/covariance
@@ -58,7 +58,7 @@ argin.group_name = group_name;
 filenames = dir(strcat(argin.data_folder, "*.json"));
 g_demo = parse_demo_trajectory(filenames, argin);
 
-% Generate random via/goal poses
+% Generate random via-point poses
 trials = generate_random_trials(g_demo{1}, 1, VIA_POSE_SCALE,...
     result_folder);
 
@@ -119,37 +119,37 @@ for i = 1:n_step
     var_cond_step(i,:) = diag(sqrt(sigma_cond_step(:,:,i)));
 end
 
-% ----- Orientation-KMP
-disp("Orientation-KMP")
+% ----- KMP
+disp("KMP")
 param.n_step = n_step;
 param.kmp_param = kmp_param;
 model.nbStates = n_state;
 
-kmp = KernalizedMovementPrimitives(g_demo, model, param);
+kmp_obj = kmp(g_demo, model, param);
 
 tic;
 
 % Condition on goal pose
-kmp.compute_kmp_via_point(g_goal, cov_goal, 1.0);
-traj_kmp_goal = kmp.get_kmp_trajectory();
-g_sample_kmp_goal = kmp.get_samples(traj_kmp_goal, n_sample);
+kmp_obj.compute_kmp_via_point(g_goal, cov_goal, 1.0);
+traj_kmp_goal = kmp_obj.get_kmp_trajectory();
+g_sample_kmp_goal = kmp_obj.get_samples(traj_kmp_goal, n_sample);
 
-traj_gmr_goal = kmp.get_gmr_trajectory();
+traj_gmr_goal = kmp_obj.get_gmr_trajectory();
 
 % Condition on via pose
-kmp.compute_kmp_via_point(g_via, cov_via, t_via);
-traj_kmp_via = kmp.get_kmp_trajectory();
-g_sample_kmp_via = kmp.get_samples(traj_kmp_via, n_sample);
+kmp_obj.compute_kmp_via_point(g_via, cov_via, t_via);
+traj_kmp_via = kmp_obj.get_kmp_trajectory();
+g_sample_kmp_via = kmp_obj.get_samples(traj_kmp_via, n_sample);
 
-traj_gmr_via = kmp.get_gmr_trajectory();
+traj_gmr_via = kmp_obj.get_gmr_trajectory();
 
 toc;
 
 % Extract distributions for GMR and KMP models
-[kmp_mean_goal, kmp_cov_goal, kmp_var_goal] = kmp.get_prob_model(traj_kmp_goal);
-[kmp_mean_via, kmp_cov_via, kmp_var_via] = kmp.get_prob_model(traj_kmp_via);
-[gmr_mean_goal, gmr_cov_goal, gmr_var_goal] = kmp.get_prob_model(traj_gmr_goal);
-[gmr_mean_via, gmr_cov_via, gmr_var_via] = kmp.get_prob_model(traj_gmr_via);
+[kmp_mean_goal, kmp_cov_goal, kmp_var_goal] = kmp_obj.get_prob_model(traj_kmp_goal);
+[kmp_mean_via, kmp_cov_via, kmp_var_via] = kmp_obj.get_prob_model(traj_kmp_via);
+[gmr_mean_goal, gmr_cov_goal, gmr_var_goal] = kmp_obj.get_prob_model(traj_gmr_goal);
+[gmr_mean_via, gmr_cov_via, gmr_var_via] = kmp_obj.get_prob_model(traj_gmr_via);
 
 % Convert samples to pose
 sample_kmp_struct = generate_pose_struct(g_sample_kmp_via,...
@@ -181,8 +181,8 @@ plot3(g_via(1,4), g_via(2,4), g_via(3,4), 'k*', LineWidth=3)
 plot3(pose_cond_mean_primp(:,1), pose_cond_mean_primp(:,2),...
     pose_cond_mean_primp(:,3), 'm-', 'LineWidth', 3)
 
-%% PLOT: Orientation-KMP
-model = kmp.get_gmm_model();
+%% PLOT: KMP
+model = kmp_obj.get_gmm_model();
 
 %%%%%%%%%%
 figure; hold on; axis equal; axis off;

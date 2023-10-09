@@ -72,8 +72,8 @@ toc;
 % Change viewing frame back for validation
 for i = 1:n_sample
     for j = 1:n_step
-        g_samples_matrix{i}(:,:,j) = H_VIEW *...
-            g_samples_matrix{i}(:,:,j) / H_VIEW;
+        g_samples_matrix{i}(:,:,j) = get_conjugation(...
+            g_samples_matrix{i}(:,:,j), H_VIEW, group_name);
     end
 end
 g_samples_joint_view = generate_pose_struct(g_samples_matrix, param.group_name);
@@ -105,7 +105,8 @@ toc;
 mu_cond_view_cartesian = nan(7,n_step);
 mu_cond_view_back = nan(4,4,n_step);
 for j = 1:n_step
-    mu_cond_view_back(:,:,j) = H_VIEW * (mu_cond_view(:,:,j) / H_VIEW);
+    mu_cond_view_back(:,:,j) = get_conjugation(mu_cond_view(:,:,j),...
+        H_VIEW, group_name);
     
     mu_cond_view_cartesian(:,j) = [mu_cond_view_back(1:3,4,j);
         rotm2quat(mu_cond_view_back(1:3,1:3))'];
@@ -114,8 +115,8 @@ end
 % Change viewing frame back for validation
 for i = 1:n_sample
     for j = 1:n_step
-        g_samples_matrix{i}(:,:,j) = H_VIEW *...
-            g_samples_matrix{i}(:,:,j) / H_VIEW;
+        g_samples_matrix{i}(:,:,j) = get_conjugation(...
+            g_samples_matrix{i}(:,:,j), H_VIEW, group_name);
     end
 end
 g_samples_view = generate_pose_struct(g_samples_matrix, param.group_name);
