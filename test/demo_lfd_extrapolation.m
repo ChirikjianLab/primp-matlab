@@ -1,4 +1,4 @@
-% Benchmark script for extrapolation between PRIMP and Orientation-KMP
+% Demo script for extrapolation between PRIMP and Orientation-KMP
 %  Demonstration data input from "/data" folder in ".json" format. Plot 
 % results from PRIMP and Orientation-KMP when via poses are out of
 % distribution.

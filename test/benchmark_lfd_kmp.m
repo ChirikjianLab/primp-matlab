@@ -41,7 +41,7 @@ n_step = 50;
 n_state = 8;
 
 % KMP parameters
-lamda = 1e-2;  % control mean prediction
+lamda = 1;  % control mean prediction
 lamdac = 60; % control variance prediction
 kh = [0.1, 1, 10]; % Scale of Gaussian kernel basis
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -128,7 +128,7 @@ for j = 1:length(kh)
 end
 
 %% Evaluation of benchmarks
-result_filename = "result_lfd_kmp_lamda_1e-2";
+result_filename = "result_lfd_kmp_lamda_1";
 
 % Store distance results
 res_filename = strcat(result_folder, result_filename, ".mat");

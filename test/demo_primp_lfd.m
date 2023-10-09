@@ -31,8 +31,8 @@ dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
 % Type of demonstration
-% demo_type = "simulation/circle";
-demo_type = "real/pouring/default";
+demo_type = "simulation/circle";
+% demo_type = "real/pouring/default";
 % demo_type = "Snake";
 % demo_type = "real/scooping/default";
 
