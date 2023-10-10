@@ -40,26 +40,56 @@ g_demo = parse_demo_trajectory(filenames, param);
 n_demo = length(g_demo);
 
 % Load random configurations for conditioning
-trials = load_random_trials(result_folder);
+trials = load_random_trials(result_folder, 2);
 n_trial = length(trials.t_via{1});
 
+pose_sim2real = load(strcat(result_folder, "/sim2real_transform.csv"));
+g_sim2real = [quat2rotm(pose_sim2real(1,4:end)), pose_sim2real(1,1:3)';
+    0, 0, 0, 1];
+
 %% PRIMP main routine
-idx = ceil(n_trial * rand);
+pose_cond_mean_tool = nan(param.n_step, 7, n_trial);
 
-% Initiate class
-tic;
+for idx = 1:n_trial
+    clc;
+    disp(strcat(num2str(idx), "/", num2str(n_trial)));
 
-primp_obj = PRIMP(g_mean.matrix, cov_t, param);
+    % Initiate class
+    tic;
 
-% Condition on via-point poses
-for i = 1:length(trials.t_via)
-    [mu_cond, sigma_cond] = primp_obj.get_condition_pdf(...
-        trials.t_via{i}(idx), trials.g_via{i}(:,:,idx),...
-        trials.cov_via{i}(:,:,idx));
+    primp_obj = PRIMP(g_mean.matrix, cov_t, param);
+
+    % Condition on via-point poses
+    for i = 1:length(trials.t_via)
+        [mu_cond, sigma_cond] = primp_obj.get_condition_pdf(...
+            trials.t_via{i}(idx), trials.g_via{i}(:,:,idx),...
+            trials.cov_via{i}(:,:,idx));
+    end
+    g_samples = primp_obj.get_samples();
+
+    toc;
+
+    % Transform to tool frame
+    mu_cond_tool = nan(4, 4, param.n_step);
+    for j = 1:param.n_step
+        mu_cond_tool(:,:,j) = mu_cond(:,:,j) / g_sim2real;
+        pose_cond_mean_tool(j,:,idx) = [mu_cond_tool(1:3,4,j)',...
+            rotm2quat(mu_cond_tool(1:3,1:3,j))];
+    end
+
 end
-g_samples = primp_obj.get_samples();
 
-toc;
+%% Save trajectories
+trajectory_primp.num_trials = n_trial;
+trajectory_primp.pose_format = "[x,y,z,qw,qx,qy,qz]";
+trajectory_primp.tool_trajectory = permute(pose_cond_mean_tool, [3,1,2]);
+
+json_data = jsonencode(trajectory_primp);
+fid = fopen( strcat(result_folder, 'trajectory_primp.json'), 'w');
+fprintf(fid, '%s', json_data);
+fclose(fid);
+
+disp("Trajectories saved to file!");
 
 %% PLOT: Condition on via-point poses
 frame_scale = 0.1;
@@ -67,38 +97,66 @@ frame_scale = 0.1;
 figure; hold on; axis off; axis equal;
 
 % Demos
-for idx = 1:n_demo
-    plot3(g_demo{idx}.pose(1,:), g_demo{idx}.pose(2,:), g_demo{idx}.pose(3,:), 'c')
+for i = 1:n_demo
+    plot3(g_demo{i}.pose(1,:), g_demo{i}.pose(2,:), g_demo{i}.pose(3,:), 'c')
 end
 
 % Prior mean poses
-pose_mean = nan(n_step, 7);
-for j = 1:n_step
-    pose_mean(j,:) = homo2pose_axang(g_mean(:,:,j));
-end
-
-plot3(pose_mean(1,:), pose_mean(2,:), pose_mean(3,:),...
+plot3(g_mean.pose(1,:), g_mean.pose(2,:), g_mean.pose(3,:),...
     'b-', 'LineWidth', 3)
 
 % Samples after condition on via pose
-for idx = 1:length(trials.g_via)
-    trplot(trials.g_via{idx}, 'rviz', 'notext', 'length', frame_scale, 'width', 1)
+for i = 1:length(trials.g_via)
+    trplot(trials.g_via{i}(:,:,idx), 'rviz', 'notext', 'length', frame_scale, 'width', 1)
 end
 
-pose_cond_mean = nan(n_step, 7);
-for j = 1:n_step
+pose_cond_mean = nan(param.n_step, 7);
+for j = 1:param.n_step
     pose_cond_mean(j,:) = homo2pose_axang(mu_cond(:,:,j));
 end
 
 plot3(pose_cond_mean(:,1), pose_cond_mean(:,2),...
     pose_cond_mean(:,3), 'm-', 'LineWidth', 3)
 
-%     for j = 1:2:n_step
-%         trplot(mu_cond(:,:,j), 'rgb', 'notext', 'length', 0.05)
-%     end
+% for j = 1:2:n_step
+%     trplot(mu_cond(:,:,j), 'rgb', 'notext', 'length', 0.05)
+% end
 
-pose_samples = generate_pose_struct(g_samples, param.group_name);
-for idx = 1:n_sample
-    plot3(pose_samples{idx}(:,1), pose_samples{idx}(:,2),...
-        pose_samples{idx}(:,3), 'm--', 'LineWidth', 1)
+% pose_samples = generate_pose_struct(g_samples, param.group_name);
+% for i = 1:param.n_sample
+%     plot3(pose_samples{i}.pose(1,:), pose_samples{i}.pose(2,:),...
+%         pose_samples{i}.pose(3,:), 'm--', 'LineWidth', 1)
+% end
+
+% Tool frames after conditioning
+for j = 1:2:param.n_step
+    trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+end
+
+%% PLOT: add robot model
+figure;
+
+robot = loadrobot("frankaEmikaPanda");
+
+ik = inverseKinematics('RigidBodyTree', robot);
+weights = [0.25 0.25 0.25 1 1 1];
+init = robot.homeConfiguration;
+
+[configSol, ~] = ik('panda_link8', mu_cond(:,:,1), weights, init);
+robot.show(configSol, 'Frames', 'off');
+
+hold on; axis equal; axis off;
+
+[configSol, ~] = ik('panda_link8', mu_cond(:,:,end), weights, init);
+robot.show(configSol, 'Frames', 'off');
+
+for i = 1:length(trials.g_via)
+    trplot(trials.g_via{i}(:,:,idx), 'rviz', 'notext', 'length', frame_scale, 'width', 1)
+end
+
+plot3(pose_cond_mean(:,1), pose_cond_mean(:,2),...
+    pose_cond_mean(:,3), 'm-', 'LineWidth', 3)
+
+for j = 1:2:param.n_step
+    trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
 end
