@@ -12,8 +12,9 @@ dataset_name = 'panda_arm';
 demo_type = load_dataset_param(dataset_name);
 
 %% Run benchmark for each demo type
-for i = 1:length(demo_type)
-    run_benchmark(dataset_name, demo_type{i});
+id = [5];
+for i = 1:length(id)
+    run_benchmark(dataset_name, demo_type{id(i)});
 end
 
 function run_benchmark(dataset_name, demo_type)
@@ -72,31 +73,33 @@ for i = 1:n_trial
     param.group_name = group_name;
     primp_obj = PRIMP(g_mean.matrix, cov_t, param);
 
-    % Condition on goal pose
-    [mean_cond, cov_cond] = primp_obj.get_condition_pdf(1.0, g_goal, cov_goal);
-    samples_goal = primp_obj.get_samples();
+    % Condition on via points
+    for j = 1:length(trials.t_via)
+        [mean_cond, cov_cond] = primp_obj.get_condition_pdf(...
+            trials.t_via{j}(i), trials.g_via{j}(:,:,i),...
+            trials.cov_via{j}(:,:,i));
+    end
+    g_samples = primp_obj.get_samples();
 
     % Convert to pose
-    pose_samples_goal = cell(n_sample, 1);
+    pose_samples = cell(n_sample, 1);
     for m = 1:n_sample
-        pose_samples_goal{m} = nan(n_step, 7);
+        pose_samples{m} = nan(n_step, 7);
         for n = 1:n_step
-            pose_samples_goal{m}(n,:) = homo2pose_quat(samples_goal{m}(:,:,n));
+            pose_samples{m}(n,:) = homo2pose_quat(g_samples{m}(:,:,n));
         end
     end
 
-    pose_goal_mean = nan(n_step, 7);
+    pose_cond_mean = nan(n_step, 7);
     for m = 1:n_step
-        pose_goal_mean(m,:) = homo2pose_axang(mean_cond(:,:,m));
+        pose_cond_mean(m,:) = homo2pose_axang(mean_cond(:,:,m));
     end
 
     cov_cond_step = zeros(6, 6, n_step);
-    cov_cond_step(:,:,1) = cov_t(:,:,1);
-    for m = 2:n_step-1
-        idx_block = 6*(m-2)+1:6*(m-1);
+    for m = 1:n_step
+        idx_block = 6*(m-1)+1:6*m;
         cov_cond_step(:,:,m) = cov_cond(idx_block, idx_block);
     end
-    cov_cond_step(:,:,end) = cov_goal;
 
     % Store learned trajectory
     % Mean and covariance
@@ -111,13 +114,13 @@ for i = 1:n_trial
     fprintf(fid, '%s', json_data);
     fclose(fid);
 
-    writematrix(pose_goal_mean, strcat(result_prefix,...
+    writematrix(pose_cond_mean, strcat(result_prefix,...
         'reference_density_mean_', num2str(i),'.csv'));
 
     % Samples
     sample_data.num_samples = n_sample;
     sample_data.num_steps = n_step;
-    sample_data.samples = pose_samples_goal;
+    sample_data.samples = pose_samples;
 
     json_data = jsonencode(sample_data);
     fid = fopen(strcat(result_prefix, 'samples_', num2str(i),'.json'), 'w');

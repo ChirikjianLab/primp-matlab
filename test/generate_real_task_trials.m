@@ -16,17 +16,14 @@ n_step = 50;
 n_trial = 50;
 
 % Type of demonstration
-demo_type = "pouring/default";
+demo_type = "pouring";
+demo_mode = "default";
 
 % Experiment ID
-exp_id = "cup_silver_bowl_03_23_2";
+exp_id = "cup_silver_bowl_03_23_1";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';
-
-% Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
-VIA_POSE_SCALE.covariance = 1e-6;
 
 % Whether to store trials
 is_store = true;
@@ -35,23 +32,18 @@ is_store = true;
 % Name of the dataset
 dataset_name = 'panda_arm/real';
 
-% Data and result folder
-data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
-key_pose_folder = strcat("../data/experiment_key_pose/", demo_type, "/", exp_id, "/");
-result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/");
+% Key pose and result folder
+key_pose_folder = strcat("../data/experiment_key_pose/", demo_type, "/", demo_mode, "/", exp_id, "/");
+result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/", demo_mode, "/");
 mkdir(result_folder);
 
 robot = loadrobot("frankaEmikaPanda");
 g_init = robot.getTransform(robot.homeConfiguration, 'panda_link8');
 
-%% Load data and key poses
-% Load demonstrations
-filenames = dir(strcat(data_folder, "*.json"));
-str = fileread(strcat(data_folder, filenames(1).name));
-file = jsondecode(str);
-g_demo = permute(file.trajectory, [2,3,1]);
-g_start2goal = g_demo(:,:,1) \ g_demo(:,:,end);
+disp(strcat("Demo type and mode: ", demo_type, ", ", demo_mode));
+disp(strcat("Experiment ID: ", exp_id));
 
+%% Load data and key poses
 % Load functional, key and object poses
 functional_poses = load(strcat(key_pose_folder, exp_id, "_functional_poses.csv"));
 key_poses = load(strcat(key_pose_folder, exp_id, "_key_poses.csv"));
@@ -74,7 +66,7 @@ for i = 1:n_pose
 
     % Initial pose of tool and robot frame
     g_tool_init = g_init;
-    g_tool_init(1:3,1:3) = axang2rotm([0, 0, 1, -pi/2]) * axang2rotm([1, 0, 0, -pi/5]);
+    g_tool_init(1:3,1:3) = g_functional(1:3,1:3) * axang2rotm([0, 1, 0, -pi/1.5]) * axang2rotm([0, 0, 1, -pi/2]);
     g_robot_init = g_tool_init * g_sim2real;
 
     % Generate random trials for each key pose
@@ -83,7 +75,6 @@ for i = 1:n_pose
 
         % Random placement of the object
         g_tran = [eye(3), [0.01 * (2*rand(2,1)-1); 0]; 0, 0, 0, 1];
-%         g_rot = [axang2rotm([0, 0, 1, 2*pi*rand]), zeros(3,1); 0, 0, 0, 1];
 
         g_obj_trial = g_tran * g_obj;
         pose_obj(idx,:) = [g_obj_trial(1:3,4)', rotm2quat(g_obj_trial(1:3,1:3))];
@@ -91,12 +82,12 @@ for i = 1:n_pose
         % Start pose
         trials.t_via{1}(idx) = 0.0;
         trials.g_via{1}(:,:,idx) = g_tran * g_robot_init;
-        trials.cov_via{1}(:,:,idx) = 1e-6 * eye(6);
+        trials.cov_via{1}(:,:,idx) = 1e-8 * eye(6);
         
         % Key pose
         trials.t_via{2}(idx) = 1.0;
         trials.g_via{2}(:,:,idx) = g_tran * g_key;
-        trials.cov_via{2}(:,:,idx) = 1e-6* eye(6);
+        trials.cov_via{2}(:,:,idx) = 1e-8 * eye(6);
     end
 end
 
@@ -121,6 +112,6 @@ if is_store
         fprintf(fid, '%s', json_data);
         fclose(fid);
     end
-end
 
-disp("Stored trials!")
+    disp("Stored trials!")
+end

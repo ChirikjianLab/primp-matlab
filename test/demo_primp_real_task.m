@@ -15,7 +15,7 @@ add_paths()
 param.n_step = 50;
 
 % Number of samples from conditional probability
-param.n_sample = 10;
+param.n_sample = 5;
 
 % Type of demonstration
 demo_type = "pouring/default";
@@ -30,6 +30,8 @@ dataset_name = 'panda_arm/real';
 % Data and result folder
 param.data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
 result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/");
+traj_folder = strcat(result_folder, "/primp_", param.group_name);
+mkdir(traj_folder);
 
 % Load demonstrations
 filenames = dir(strcat(param.data_folder, "*.json"));
@@ -50,38 +52,36 @@ g_sim2real = [quat2rotm(pose_sim2real(1,4:end)), pose_sim2real(1,1:3)';
 %% PRIMP main routine
 pose_cond_mean_tool = nan(param.n_step, 7, n_trial);
 
-for idx = 1:n_trial
-    clc;
-    disp(strcat(num2str(idx), "/", num2str(n_trial)));
+idx = ceil(n_trial * rand);
 
-    % Initiate class
-    tic;
+clc;
+disp(strcat(num2str(idx), "/", num2str(n_trial)));
 
-    primp_obj = PRIMP(g_mean.matrix, cov_t, param);
+% Initiate class
+tic;
 
-    % Condition on via-point poses
-    for i = 1:length(trials.t_via)
-        [mu_cond, sigma_cond] = primp_obj.get_condition_pdf(...
-            trials.t_via{i}(idx), trials.g_via{i}(:,:,idx),...
-            trials.cov_via{i}(:,:,idx));
-    end
-    g_samples = primp_obj.get_samples();
+primp_obj = PRIMP(g_mean.matrix, cov_t, param);
 
-    toc;
+% Condition on via-point poses
+for i = 1:length(trials.t_via)
+    [mu_cond, sigma_cond] = primp_obj.get_condition_pdf(...
+        trials.t_via{i}(idx), trials.g_via{i}(:,:,idx),...
+        trials.cov_via{i}(:,:,idx));
+end
+g_samples = primp_obj.get_samples();
 
-    % Transform to tool frame
-    mu_cond_tool = nan(4, 4, param.n_step);
-    for j = 1:param.n_step
-        mu_cond_tool(:,:,j) = mu_cond(:,:,j) / g_sim2real;
-        pose_cond_mean_tool(j,:,idx) = [mu_cond_tool(1:3,4,j)',...
-            rotm2quat(mu_cond_tool(1:3,1:3,j))];
-    end
+toc;
 
+% Transform to tool frame
+mu_cond_tool = nan(4, 4, param.n_step);
+for j = 1:param.n_step
+    mu_cond_tool(:,:,j) = mu_cond(:,:,j) / g_sim2real;
+    pose_cond_mean_tool(j,:,idx) = homo2pose_quat(mu_cond_tool(:,:,j));
 end
 
 %% Save trajectories
 trajectory_primp.num_trials = n_trial;
-trajectory_primp.pose_format = "[x,y,z,qw,qx,qy,qz]";
+trajectory_primp.pose_format = "[x,y,z,qx,qy,qz,qw]";
 trajectory_primp.tool_trajectory = permute(pose_cond_mean_tool, [3,1,2]);
 
 json_data = jsonencode(trajectory_primp);
@@ -89,7 +89,7 @@ fid = fopen( strcat(result_folder, 'trajectory_primp.json'), 'w');
 fprintf(fid, '%s', json_data);
 fclose(fid);
 
-disp("Trajectories saved to file!");
+disp("Tool trajectories saved to file!");
 
 %% PLOT: Condition on via-point poses
 frame_scale = 0.1;
@@ -111,8 +111,8 @@ for i = 1:length(trials.g_via)
 end
 
 pose_cond_mean = nan(param.n_step, 7);
-for j = 1:param.n_step
-    pose_cond_mean(j,:) = homo2pose_axang(mu_cond(:,:,j));
+for m = 1:param.n_step
+    pose_cond_mean(m,:) = homo2pose_axang(mu_cond(:,:,m));
 end
 
 plot3(pose_cond_mean(:,1), pose_cond_mean(:,2),...
@@ -142,13 +142,12 @@ ik = inverseKinematics('RigidBodyTree', robot);
 weights = [0.25 0.25 0.25 1 1 1];
 init = robot.homeConfiguration;
 
-[configSol, ~] = ik('panda_link8', mu_cond(:,:,1), weights, init);
-robot.show(configSol, 'Frames', 'off');
-
+for i = 1:param.n_step
+    [configSol{i}, ~] = ik('panda_link8', mu_cond(:,:,i), weights, init);
+end
+robot.show(configSol{1}, 'Frames', 'off');
 hold on; axis equal; axis off;
-
-[configSol, ~] = ik('panda_link8', mu_cond(:,:,end), weights, init);
-robot.show(configSol, 'Frames', 'off');
+robot.show(configSol{end}, 'Frames', 'off');
 
 for i = 1:length(trials.g_via)
     trplot(trials.g_via{i}(:,:,idx), 'rviz', 'notext', 'length', frame_scale, 'width', 1)
