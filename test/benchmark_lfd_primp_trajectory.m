@@ -12,7 +12,7 @@ dataset_name = 'panda_arm';
 demo_type = load_dataset_param(dataset_name);
 
 %% Run benchmark for each demo type
-id = [5];
+id = [5, 6, 7, 8, 10];
 for i = 1:length(id)
     run_benchmark(dataset_name, demo_type{id(i)});
 end
@@ -64,10 +64,6 @@ for i = 1:n_trial
     disp(['Demo type: ', demo_type])
     disp([num2str(i/(n_trial) * 100), '%'])
 
-    % Load random via/goal poses
-    g_goal = trials.g_via{1}(:,:,i);
-    cov_goal = trials.cov_via{1}(:,:,i);
-
     % Initiate class
     param.n_sample = n_sample;
     param.group_name = group_name;
@@ -84,6 +80,7 @@ for i = 1:n_trial
     % Convert to pose
     pose_samples = cell(n_sample, 1);
     for m = 1:n_sample
+        n_step = length(g_samples{m});
         pose_samples{m} = nan(n_step, 7);
         for n = 1:n_step
             pose_samples{m}(n,:) = homo2pose_quat(g_samples{m}(:,:,n));

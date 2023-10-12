@@ -18,7 +18,9 @@ param.n_step = 50;
 param.n_sample = 5;
 
 % Type of demonstration
-demo_type = "pouring/default";
+% demo_type = "pouring/default";
+demo_type = "transporting/default";
+% demo_type = "scooping/default";
 
 % Group name: 'SE', 'PCG'
 param.group_name = 'PCG';
@@ -45,9 +47,12 @@ n_demo = length(g_demo);
 trials = load_random_trials(result_folder, 2);
 n_trial = length(trials.t_via{1});
 
-pose_sim2real = load(strcat(result_folder, "/sim2real_transform.csv"));
-g_sim2real = [quat2rotm(pose_sim2real(1,4:end)), pose_sim2real(1,1:3)';
-    0, 0, 0, 1];
+try
+    pose_sim2real = load(strcat(result_folder, "/sim2real_transform.csv"));
+    g_sim2real = [quat2rotm(pose_sim2real(1,4:end)), pose_sim2real(1,1:3)';
+        0, 0, 0, 1];
+catch
+end
 
 %% PRIMP main routine
 pose_cond_mean_tool = nan(param.n_step, 7, n_trial);
@@ -72,24 +77,28 @@ g_samples = primp_obj.get_samples();
 
 toc;
 
-% Transform to tool frame
-mu_cond_tool = nan(4, 4, param.n_step);
-for j = 1:param.n_step
-    mu_cond_tool(:,:,j) = mu_cond(:,:,j) / g_sim2real;
-    pose_cond_mean_tool(j,:,idx) = homo2pose_quat(mu_cond_tool(:,:,j));
+try
+    % Transform to tool frame
+    mu_cond_tool = nan(4, 4, param.n_step);
+    for j = 1:param.n_step
+        mu_cond_tool(:,:,j) = mu_cond(:,:,j) / g_sim2real;
+        pose_cond_mean_tool(j,:,idx) = homo2pose_quat(mu_cond_tool(:,:,j));
+    end
+
+    %% Save trajectories
+    trajectory_primp.num_trials = n_trial;
+    trajectory_primp.pose_format = "[x,y,z,qx,qy,qz,qw]";
+    trajectory_primp.tool_trajectory = permute(pose_cond_mean_tool, [3,1,2]);
+
+    json_data = jsonencode(trajectory_primp);
+    fid = fopen( strcat(result_folder, 'trajectory_primp.json'), 'w');
+    fprintf(fid, '%s', json_data);
+    fclose(fid);
+
+    disp("Tool trajectories saved to file!");
+
+catch
 end
-
-%% Save trajectories
-trajectory_primp.num_trials = n_trial;
-trajectory_primp.pose_format = "[x,y,z,qx,qy,qz,qw]";
-trajectory_primp.tool_trajectory = permute(pose_cond_mean_tool, [3,1,2]);
-
-json_data = jsonencode(trajectory_primp);
-fid = fopen( strcat(result_folder, 'trajectory_primp.json'), 'w');
-fprintf(fid, '%s', json_data);
-fclose(fid);
-
-disp("Tool trajectories saved to file!");
 
 %% PLOT: Condition on via-point poses
 frame_scale = 0.1;
@@ -128,9 +137,12 @@ plot3(pose_cond_mean(:,1), pose_cond_mean(:,2),...
 %         pose_samples{i}.pose(3,:), 'm--', 'LineWidth', 1)
 % end
 
-% Tool frames after conditioning
-for j = 1:2:param.n_step
-    trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+try
+    % Tool frames after conditioning
+    for j = 1:2:param.n_step
+        trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+    end
+catch
 end
 
 %% PLOT: add robot model
@@ -156,6 +168,9 @@ end
 plot3(pose_cond_mean(:,1), pose_cond_mean(:,2),...
     pose_cond_mean(:,3), 'm-', 'LineWidth', 3)
 
-for j = 1:2:param.n_step
-    trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+try
+    for j = 1:2:param.n_step
+        trplot(mu_cond_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+    end
+catch
 end
