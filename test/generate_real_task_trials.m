@@ -73,7 +73,6 @@ if strcmp(demo_type, "pouring") || strcmp(demo_type, "scooping")
     g_tool = g_demo{1}(:,:,end) / g_sim2real;
     g_obj(1:2,4) = g_tool(1:2,4);
 
-    pose_sim2real = zeros(n_pose, 7);
     % Generate random trials
     pose_obj = zeros(n_trial, 7);
     for j = 1:n_trial
