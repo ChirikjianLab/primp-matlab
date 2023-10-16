@@ -50,85 +50,69 @@ g_init = robot.getTransform(robot.homeConfiguration, 'panda_link8');
 
 % Load demonstrations
 filenames = dir(strcat(data_folder, "*.json"));
-file = jsondecode( fileread(strcat(data_folder, filenames(1).name)) );
-g_demo = permute(file.trajectory, [2,3,1]);
+n_demo = length(filenames);
+g_demo = cell(n_demo, 1);
+for i = 1:n_demo
+    file = jsondecode( fileread(strcat(data_folder, filenames(i).name)) );
+    g_demo{i} = permute(file.trajectory, [2,3,1]);
+end
 
 disp(strcat("Demo type and mode: ", demo_type, ", ", demo_mode));
+
+% Load sim2real transform
+g_sim2real = get_sim2real(demo_type);
+pose_sim2real = homo2pose_quat(g_sim2real);
 
 %% Load data and key poses
 if strcmp(demo_type, "pouring") || strcmp(demo_type, "scooping")
     disp(strcat("Experiment ID: ", exp_id));
 
-    % Load functional, key and object poses
-    functional_poses = load(strcat(key_pose_folder, "functional_poses.csv"));
-    key_poses = load(strcat(key_pose_folder, "key_poses.csv"));
+    % Load object poses
     obj_pose = readmatrix(strcat(key_pose_folder, "perception_0/obj_com_pose.txt"));
-    n_pose = size(key_poses, 1);
-
-    % Object pose in homo transform
     g_obj = [quat2rotm(obj_pose(2,:)), obj_pose(1,1:3)'; 0, 0, 0, 1];
+    g_tool = g_demo{1}(:,:,end) / g_sim2real;
+    g_obj(1:2,4) = g_tool(1:2,4);
 
     pose_sim2real = zeros(n_pose, 7);
-    pose_obj = zeros(n_pose * n_trial, 7);
-    for i = 1:n_pose
-        % Relative transform between functional pose to key pose
-        g_functional = [quat2rotm(functional_poses(i,4:end)),...
-            functional_poses(i,1:3)'; 0, 0, 0, 1];
-        g_key = [quat2rotm(key_poses(i,4:end)), key_poses(i,1:3)';
-            0, 0, 0, 1];
-        g_sim2real = g_functional \ g_key;
-        pose_sim2real(i,:) = homo2pose_quat(g_sim2real);
+    % Generate random trials
+    pose_obj = zeros(n_trial, 7);
+    for j = 1:n_trial
+        idx_demo = ceil(n_demo * rand);
 
-        % Generate random trials for each key pose
-        for j = 1:n_trial
-            idx = (i-1) * n_trial + j;
+        % Random placement of the object
+        g_tran = [axang2rotm([0, 0, 1, 0.1 * (2*rand-1)]),...
+            [0.1 * (2*rand(2,1)-1); 0]; 0, 0, 0, 1];
+        g_obj_trial = g_tran * g_obj;
+        pose_obj(j,:) = homo2pose_quat(g_obj_trial);
 
-            % Random placement of the object
-            g_tran = [eye(3), [0.01 * (2*rand(2,1)-1); 0]; 0, 0, 0, 1];
+        if strcmp(demo_type, "pouring")
+            % >> TASK 1: pouring
+            % Start pose
+            trials.t_via{1}(j) = 0.0;
+            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,1);
+            trials.cov_via{1}(:,:,j) = 1e-8 * eye(6);
 
-            g_obj_trial = g_tran * g_obj;
-            pose_obj(idx,:) = homo2pose_quat(g_obj_trial);
+            % Key pose
+            trials.t_via{2}(j) = 1.0;
+            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,end);
+            trials.cov_via{2}(:,:,j) = 1e-8 * eye(6);
 
-            if strcmp(demo_type, "pouring")
-                % >> TASK 1: pouring
-                % Initial pose of tool and robot frame
-                g_tool_init = g_init;
-                g_tool_init(1:3,1:3) = g_functional(1:3,1:3) *...
-                    axang2rotm([0, 1, 0, -pi/1.5]) * axang2rotm([0, 0, 1, -pi/2]);
-                g_robot_init = g_tool_init * g_sim2real;
+        else
+            % >> TASK 3: scooping
+            % Start pose
+            trials.t_via{1}(j) = 0.0;
+            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,1);
+            trials.cov_via{1}(:,:,j) = 1e-8 * eye(6);
 
-                % Start pose
-                trials.t_via{1}(idx) = 0.0;
-                trials.g_via{1}(:,:,idx) = g_tran * g_robot_init;
-                trials.cov_via{1}(:,:,idx) = 1e-8 * eye(6);
+            % Key pose
+            trials.t_via{2}(j) = 0.5;
+            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,floor(0.5 * n_step));
+            trials.cov_via{2}(:,:,j) = 1e-8 * eye(6);
 
-                % Key pose
-                trials.t_via{2}(idx) = 1.0;
-                trials.g_via{2}(:,:,idx) = g_tran * g_key;
-                trials.cov_via{2}(:,:,idx) = 1e-8 * eye(6);
-
-            else
-                % >> TASK 3: scooping
-                % Initial pose of tool and robot frame
-                g_robot_init = g_init;
-                g_robot_init(1:3,1:3) = g_demo(1:3,1:3);
-                g_robot_init(1:3,4) = g_robot_init(1:3,4) - [0;0;0.3];
-
-                % Start pose
-                trials.t_via{1}(idx) = 0.0;
-                trials.g_via{1}(:,:,idx) = g_tran * g_robot_init;
-                trials.cov_via{1}(:,:,idx) = 1e-8 * eye(6);
-
-                % Key pose
-                trials.t_via{2}(idx) = 0.5;
-                trials.g_via{2}(:,:,idx) = g_tran * g_key;
-                trials.cov_via{2}(:,:,idx) = 1e-8 * eye(6);
-
-                % Goal pose
-                trials.t_via{3}(idx) = 1.0;
-                trials.g_via{3}(:,:,idx) = trials.g_via{1}(:,:,idx);
-                trials.cov_via{3}(:,:,idx) = 1e-8 * eye(6);
-            end
+            % Goal pose
+            trials.t_via{3}(j) = 1.0;
+            trials.g_via{3}(:,:,j) = trials.g_via{1}(:,:,j);
+            trials.cov_via{3}(:,:,j) = 1e-8 * eye(6);
         end
     end
 
@@ -167,9 +151,12 @@ disp("Generated key configurations!")
 if is_store
     n_via = length(trials.t_via);
 
-    if strcmp(demo_type, "pouring") || strcmp(demo_type, "scooping")
+    if ~strcmp(demo_type, "opening")
         writematrix(pose_sim2real, strcat(result_folder, 'sim2real_transform.csv'));
-        writematrix(pose_obj, strcat(result_folder, 'object_poses.csv'));
+
+        if ~strcmp(demo_type, "transporting")
+            writematrix(pose_obj, strcat(result_folder, 'object_poses.csv'));
+        end
     end
 
     for k = 1:n_via
@@ -186,4 +173,21 @@ if is_store
     end
 
     disp("Stored trials!")
+end
+
+%% Function for sim2real transform
+function g_sim2real = get_sim2real(demo_type)
+g_sim2real = eye(4);
+
+if strcmp(demo_type, "pouring")
+    % Cup
+    g_sim2real(1:3,1:3) = quat2rotm([-0.268727310712929, 0.654269570423345, -0.653749130622258, -0.268940580622729]);
+    g_sim2real(1:3,4) = [2.49313314006345e-07; -0.102999398242869; -0.069999581902642];
+
+elseif strcmp(demo_type, "scooping") || strcmp(demo_type, "transporting")
+    % Spoon
+    g_sim2real(1:3,1:3) = quat2rotm([0.000736827109921299, -0.924908622088215, -0.380188646017929, 0.000302178329749137]);
+    g_sim2real(1:3,4) = [6.43144294177156e-07; -0.100000334649197; 0.102999664735546];
+
+end
 end
