@@ -9,17 +9,18 @@ add_paths()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tunable parameters
 % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-% Type of demonstration
-% demo_type = "pouring/default";
-% demo_type = "transporting/default";
-% demo_type = "scooping/default";
-demo_type = "opening/sliding";
-% demo_type = "opening/rotating_left";
-
 % Type of planning scene
 scene_type = "empty";
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+demo_type = ["pouring/default", "transporting/default",...
+    "scooping/default", "opening/sliding", "opening/rotating_left"];
+
+for i = 1:length(demo_type)
+    evaluate(demo_type(i), scene_type);
+end
+
+function evaluate(demo_type, scene_type)
 % Result folder
 primp_result_folder = strcat("../result/benchmark/panda_arm/real/", demo_type);
 result_folder = strcat("../result/benchmark/planning/", scene_type, "/", demo_type, "/");
@@ -43,14 +44,14 @@ pose_ref = cell(n_ref, 1);
 g_ref = cell(n_ref, 1);
 for i = 1:n_ref
     pose_ref{i} = load(strcat(filenames(i).folder, "/", filenames(i).name));
-    
+
     for j = 1:size(pose_ref{i},1)
         g_ref{i}(:,:,j) = [axang2rotm(pose_ref{i}(j,4:end)), pose_ref{i}(j,1:3)';
             0, 0, 0, 1] / g_sim2real;
     end
 end
 
-filenames = dir(strcat(result_folder, "*.json"));
+filenames = dir(strcat(result_folder, "stomp_joint_trajectory*.json"));
 n_experiment = length(filenames);
 for k = 1:n_experiment
     % Load .json file for each experiment
@@ -61,6 +62,7 @@ for k = 1:n_experiment
 
     for i = 1:n_trial
         clc;
+        disp(strcat("Task: ", demo_type));
         disp(strcat("Benchmark: ", num2str(k), "/", num2str(n_experiment)));
         disp(strcat("Trial: ", num2str(i), "/", num2str(n_trial)));
 
@@ -103,14 +105,14 @@ for k = 1:n_experiment
     tool_traj_data.pose_format = "[x,y,z,qx,qy,qz,qw]";
     tool_traj_data.idx_failed = idx_failed;
     tool_traj_data.tool_trajectory = permute(pose_tool, [3,1,2]);
-    
+
     json_data_out = jsonencode(tool_traj_data, 'PrettyPrint', true);
     fid = fopen( strcat(result_folder, 'tool_trajectory_',...
         json_data_in.cost_name, '.json'), 'w');
     fprintf(fid, '%s', json_data_out);
     fclose(fid);
 
-    
+
     disp("Tool trajectories saved to file!");
 
     % Save direct evaluation results
@@ -128,23 +130,27 @@ for k = 1:n_experiment
     end
 
     %% Plot
-    figure;
+    try
+        figure;
 
-    ik = inverseKinematics('RigidBodyTree', robot);
-    weights = [0.25 0.25 0.25 1 1 1];
-    init = robot.homeConfiguration;
+        ik = inverseKinematics('RigidBodyTree', robot);
+        weights = [0.25 0.25 0.25 1 1 1];
+        init = robot.homeConfiguration;
 
-    for i = 1:n_step
-        [configSol{i}, ~] = ik('panda_link8', g_link8(:,:,i), weights, init);
+        for i = 1:n_step
+            [configSol{i}, ~] = ik('panda_link8', g_link8(:,:,i), weights, init);
+        end
+        robot.show(configSol{1}, 'Frames', 'off');
+        hold on; axis equal; axis off;
+        robot.show(configSol{end}, 'Frames', 'off');
+
+        % Tool frames after planning
+        for j = 1:2:n_step
+            trplot(g_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
+        end
+    catch
     end
-    robot.show(configSol{1}, 'Frames', 'off');
-    hold on; axis equal; axis off;
-    robot.show(configSol{end}, 'Frames', 'off');
-
-    % Tool frames after planning
-    for j = 1:2:n_step
-        trplot(g_tool(:,:,j), 'rgb', 'notext', 'length', 0.05)
-    end
+end
 end
 
 %% Function for direct evaluation
@@ -153,34 +159,34 @@ flag = nan;
 n_step = size(g_tool, 3);
 
 if strcmp(demo_type, "transporting/default")
-        % Orientation align with global z-axis
-        axis_ref = [0; 0; -1];
-        dist = nan(1,n_step);
+    % Orientation align with global z-axis
+    axis_ref = [0; 0; -1];
+    dist = nan(1,n_step);
 
-        for i = 1:n_step
-            axis_tool = g_tool(1:3,3,i);
-            dist(i) = acos(dot(axis_tool, axis_ref));
-        end
+    for i = 1:n_step
+        axis_tool = g_tool(1:3,3,i);
+        dist(i) = acos(dot(axis_tool, axis_ref));
+    end
 
-        flag = all(abs(dist) <= 20/180*pi);
+    flag = all(abs(dist) <= 20/180*pi);
 
 elseif strcmp(demo_type, "opening/sliding") || strcmp(demo_type, "opening/rotating_left")
-%         figure; hold on; axis equal;
+    %         figure; hold on; axis equal;
 
-        % Position relative to starting point
-        for i = 1:n_step
-            g_rel_ref = g_ref(:,:,1) \ g_ref(:,:,i);
-            g_rel_tool = g_tool(:,:,1) \ g_tool(:,:,i);
+    % Position relative to starting point
+    for i = 1:n_step
+        g_rel_ref = g_ref(:,:,1) \ g_ref(:,:,i);
+        g_rel_tool = g_tool(:,:,1) \ g_tool(:,:,i);
 
-            g_diff = get_rel_pose(g_rel_ref, g_rel_tool, 'PCG');
+        g_diff = get_rel_pose(g_rel_ref, g_rel_tool, 'PCG');
 
-            dist(1,i) = norm(logm_SO(g_diff(1:3,1:3)));
-            dist(2,i) = norm(g_diff(1:3,4));
+        dist(1,i) = norm(logm_SO(g_diff(1:3,1:3)));
+        dist(2,i) = norm(g_diff(1:3,4));
 
-%             plot3(g_rel_ref(1,4), g_rel_ref(2,4), g_rel_ref(3,4), 'k*')
-%             plot3(g_rel_tool(1,4), g_rel_tool(2,4), g_rel_tool(3,4), 'b.')
-        end
+        %             plot3(g_rel_ref(1,4), g_rel_ref(2,4), g_rel_ref(3,4), 'k*')
+        %             plot3(g_rel_tool(1,4), g_rel_tool(2,4), g_rel_tool(3,4), 'b.')
+    end
 
-         flag = all(dist(1,:) <= 20/180*pi) && all(dist(2,:) <= 0.1);
+    flag = all(dist(1,:) <= 20/180*pi) && all(dist(2,:) <= 0.1);
 end
 end
