@@ -36,9 +36,22 @@ catch
     g_sim2real = robot.getTransform(robot.homeConfiguration, "panda_link8", "panda_leftfinger");
 end
 
+% Load reference trajectory mean and transform to tool frame
+filenames = dir(strcat(primp_result_folder, "/primp_PCG/*.csv"));
+n_ref = length(filenames);
+pose_ref = cell(n_ref, 1);
+g_ref = cell(n_ref, 1);
+for i = 1:n_ref
+    pose_ref{i} = load(strcat(filenames(i).folder, "/", filenames(i).name));
+    
+    for j = 1:size(pose_ref{i},1)
+        g_ref{i}(:,:,j) = [axang2rotm(pose_ref{i}(j,4:end)), pose_ref{i}(j,1:3)';
+            0, 0, 0, 1] / g_sim2real;
+    end
+end
+
 filenames = dir(strcat(result_folder, "*.json"));
 n_experiment = length(filenames);
-
 for k = 1:n_experiment
     % Load .json file for each experiment
     json_data_in = jsondecode( fileread(strcat(result_folder, filenames(k).name)) );
@@ -77,7 +90,7 @@ for k = 1:n_experiment
         end
 
         % Evaluate from tool trajectory
-        flag_task(i) = is_task_success(g_tool, demo_type);
+        flag_task(i) = is_task_success(g_tool, g_ref{i}, demo_type);
         disp("Direct evaluation without simulation done!")
     end
 
@@ -90,17 +103,29 @@ for k = 1:n_experiment
     tool_traj_data.pose_format = "[x,y,z,qx,qy,qz,qw]";
     tool_traj_data.idx_failed = idx_failed;
     tool_traj_data.tool_trajectory = permute(pose_tool, [3,1,2]);
-    tool_traj_data.flag_task = flag_task;
-    tool_traj_data.task_success_rate = sum(flag_task)/n_trial;
-
+    
     json_data_out = jsonencode(tool_traj_data, 'PrettyPrint', true);
     fid = fopen( strcat(result_folder, 'tool_trajectory_',...
         json_data_in.cost_name, '.json'), 'w');
     fprintf(fid, '%s', json_data_out);
     fclose(fid);
 
-    disp(strcat("Task success rate: ", num2str(tool_traj_data.task_success_rate)));
+    
     disp("Tool trajectories saved to file!");
+
+    % Save direct evaluation results
+    if ~isnan(flag_task(1))
+        task_success_data.flag_task = flag_task;
+        task_success_data.task_success_rate = sum(flag_task)/n_trial;
+
+        json_data_out = jsonencode(task_success_data, 'PrettyPrint', true);
+        fid = fopen( strcat(result_folder, 'task_success_rate_',...
+            json_data_in.cost_name, '.json'), 'w');
+        fprintf(fid, '%s', json_data_out);
+        fclose(fid);
+
+        disp(strcat("Task success rate: ", num2str(task_success_data.task_success_rate)));
+    end
 
     %% Plot
     figure;
@@ -123,12 +148,11 @@ for k = 1:n_experiment
 end
 
 %% Function for direct evaluation
-function flag = is_task_success(g_tool, demo_type)
+function flag = is_task_success(g_tool, g_ref, demo_type)
 flag = nan;
 n_step = size(g_tool, 3);
 
-switch demo_type
-    case "transporting/default"
+if strcmp(demo_type, "transporting/default")
         % Orientation align with global z-axis
         axis_ref = [0; 0; -1];
         dist = nan(1,n_step);
@@ -140,18 +164,23 @@ switch demo_type
 
         flag = all(abs(dist) <= 20/180*pi);
 
-    case "opening/sliding"
-        % Position stay in a line
-        g_ref = g_tool(:,:,1) \ g_tool(:,:,end);
-        tran_ref = g_ref(1:3,4);
-        dist = nan(1,n_step-1);
+elseif strcmp(demo_type, "opening/sliding") || strcmp(demo_type, "opening/rotating_left")
+%         figure; hold on; axis equal;
 
-        for i = 2:n_step
-            g_rel = g_tool(:,:,1) \ g_tool(:,:,i);
-            tran_rel = g_rel(1:3,4);
-            dist(i-1) = acos(dot(tran_ref, tran_rel)/(norm(tran_rel)*norm(tran_ref)));
+        % Position relative to starting point
+        for i = 1:n_step
+            g_rel_ref = g_ref(:,:,1) \ g_ref(:,:,i);
+            g_rel_tool = g_tool(:,:,1) \ g_tool(:,:,i);
+
+            g_diff = get_rel_pose(g_rel_ref, g_rel_tool, 'PCG');
+
+            dist(1,i) = norm(logm_SO(g_diff(1:3,1:3)));
+            dist(2,i) = norm(g_diff(1:3,4));
+
+%             plot3(g_rel_ref(1,4), g_rel_ref(2,4), g_rel_ref(3,4), 'k*')
+%             plot3(g_rel_tool(1,4), g_rel_tool(2,4), g_rel_tool(3,4), 'b.')
         end
 
-        flag = all(abs(dist) <= 20/180*pi);
+         flag = all(dist(1,:) <= 20/180*pi) && all(dist(2,:) <= 0.1);
 end
 end
