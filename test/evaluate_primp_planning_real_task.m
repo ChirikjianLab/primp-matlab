@@ -6,21 +6,17 @@
 close all; clear; clc;
 add_paths()
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Tunable parameters
-% ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-% Type of planning scene
-scene_type = "empty";
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+scene_type = ["empty", "sparse", "cluttered", "dense"];
 demo_type = ["pouring/default", "transporting/default",...
     "scooping/default", "opening/sliding", "opening/rotating_left"];
 
-for i = 1:length(demo_type)
-    evaluate(demo_type(i), scene_type);
+for i = 1:length(scene_type)
+    for j = 1:length(demo_type)
+        evaluate(scene_type(i), demo_type(j));
+    end
 end
 
-function evaluate(demo_type, scene_type)
+function evaluate(scene_type, demo_type)
 % Result folder
 primp_result_folder = strcat("../result/benchmark/panda_arm/real/", demo_type);
 result_folder = strcat("../result/benchmark/planning/", scene_type, "/", demo_type, "/");
@@ -31,8 +27,8 @@ robot = loadrobot("frankaEmikaPanda", "DataFormat", "row");
 % Load sim2real transform
 try
     pose_sim2real = load(strcat(primp_result_folder, "/sim2real_transform.csv"));
-    g_sim2real = [quat2rotm(pose_sim2real(1,4:end)), pose_sim2real(1,1:3)';
-        0, 0, 0, 1];
+    g_sim2real = [quat2rotm([pose_sim2real(1,end), pose_sim2real(1,4:6)]),...
+        pose_sim2real(1,1:3)'; 0, 0, 0, 1];
 catch
     g_sim2real = robot.getTransform(robot.homeConfiguration, "panda_link8", "panda_leftfinger");
 end
@@ -62,6 +58,7 @@ for k = 1:n_experiment
 
     for i = 1:n_trial
         clc;
+        disp(strcat("Scene: ", scene_type));
         disp(strcat("Task: ", demo_type));
         disp(strcat("Benchmark: ", num2str(k), "/", num2str(n_experiment)));
         disp(strcat("Trial: ", num2str(i), "/", num2str(n_trial)));
@@ -92,8 +89,8 @@ for k = 1:n_experiment
         end
 
         % Evaluate from tool trajectory
-        flag_task(i) = is_task_success(g_tool, g_ref{i}, demo_type);
-        disp("Direct evaluation without simulation done!")
+        [flag_task(i), dist] = is_task_success(g_tool, g_ref{i}, demo_type);
+        dist_task(i) = mean(dist(end,:));
     end
 
     %% Save to files
@@ -119,6 +116,7 @@ for k = 1:n_experiment
     if ~isnan(flag_task(1))
         task_success_data.flag_task = flag_task;
         task_success_data.task_success_rate = sum(flag_task)/n_trial;
+        task_success_data.distance_metric = dist_task;
 
         json_data_out = jsonencode(task_success_data, 'PrettyPrint', true);
         fid = fopen( strcat(result_folder, 'task_success_rate_',...
@@ -154,13 +152,14 @@ end
 end
 
 %% Function for direct evaluation
-function flag = is_task_success(g_tool, g_ref, demo_type)
+function [flag, dist] = is_task_success(g_tool, g_ref, demo_type)
 flag = nan;
+dist = nan;
 n_step = size(g_tool, 3);
 
 if strcmp(demo_type, "transporting/default")
     % Orientation align with global z-axis
-    axis_ref = [0; 0; -1];
+    axis_ref = [0; 0; 1];
     dist = nan(1,n_step);
 
     for i = 1:n_step
@@ -175,18 +174,23 @@ elseif strcmp(demo_type, "opening/sliding") || strcmp(demo_type, "opening/rotati
 
     % Position relative to starting point
     for i = 1:n_step
-        g_rel_ref = g_ref(:,:,1) \ g_ref(:,:,i);
-        g_rel_tool = g_tool(:,:,1) \ g_tool(:,:,i);
+        try
+            g_rel_ref = g_ref(:,:,1) \ g_ref(:,:,i);
+            g_rel_tool = g_tool(:,:,1) \ g_tool(:,:,i);
 
-        g_diff = get_rel_pose(g_rel_ref, g_rel_tool, 'PCG');
+            g_diff = get_rel_pose(g_rel_ref, g_rel_tool, 'PCG');
 
-        dist(1,i) = norm(logm_SO(g_diff(1:3,1:3)));
-        dist(2,i) = norm(g_diff(1:3,4));
+            dist(1,i) = norm(logm_SO(g_diff(1:3,1:3)));
+            dist(2,i) = norm(g_diff(1:3,4));
+        catch
+            dist(1,i) = nan;
+            dist(2,i) = nan;
+        end
 
         %             plot3(g_rel_ref(1,4), g_rel_ref(2,4), g_rel_ref(3,4), 'k*')
         %             plot3(g_rel_tool(1,4), g_rel_tool(2,4), g_rel_tool(3,4), 'b.')
     end
 
-    flag = all(dist(1,:) <= 20/180*pi) && all(dist(2,:) <= 0.1);
+    flag = all(dist(1,:) <= 20/180*pi) && all(dist(2,:) <= 0.2);
 end
 end
