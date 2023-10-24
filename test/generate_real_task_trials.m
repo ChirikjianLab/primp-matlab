@@ -49,13 +49,13 @@ robot = loadrobot("frankaEmikaPanda");
 g_init = robot.getTransform(robot.homeConfiguration, 'panda_link8');
 
 % Load demonstrations
-filenames = dir(strcat(data_folder, "*.json"));
+param.n_step = n_step;
+param.group_name = group_name;
+param.data_folder = data_folder;
+filenames = dir(strcat(param.data_folder, "*.json"));
 n_demo = length(filenames);
-g_demo = cell(n_demo, 1);
-for i = 1:n_demo
-    file = jsondecode( fileread(strcat(data_folder, filenames(i).name)) );
-    g_demo{i} = permute(file.trajectory, [2,3,1]);
-end
+g_demo = parse_demo_trajectory(filenames, param);
+
 idx_demo = ceil(n_demo * rand);
 
 disp(strcat("Demo type and mode: ", demo_type, ", ", demo_mode));
@@ -96,32 +96,32 @@ if strcmp(demo_type, "pouring") || strcmp(demo_type, "scooping")
             % >> TASK 1: pouring
             % Tool frame at goal step
             idx_pour = n_step;
-            g_tool = g_demo{idx_demo}(:,:,idx_pour) / g_sim2real;
+            g_tool = g_demo{idx_demo}.matrix(:,:,idx_pour) / g_sim2real;
 
             % Start pose
             trials.t_via{1}(j) = 0.0;
-            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,1);
+            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}.matrix(:,:,1);
             trials.cov_via{1}(:,:,j) = 1e-8 * eye(6);
 
             % Key pose
             trials.t_via{2}(j) = 1.0;
-            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,idx_pour);
+            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}.matrix(:,:,idx_pour);
             trials.cov_via{2}(:,:,j) = 1e-8 * eye(6);
 
         else
             % >> TASK 3: scooping
             % Tool frame at the middle step
             idx_scoop = floor(0.5 * n_step);
-            g_tool = g_demo{idx_demo}(:,:,idx_scoop) / g_sim2real;
+            g_tool = g_demo{idx_demo}.matrix(:,:,idx_scoop) / g_sim2real;
 
             % Start pose
             trials.t_via{1}(j) = 0.0;
-            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,1);
+            trials.g_via{1}(:,:,j) = g_tran * g_demo{idx_demo}.matrix(:,:,1);
             trials.cov_via{1}(:,:,j) = 1e-8 * eye(6);
 
             % Key pose
             trials.t_via{2}(j) = 0.5;
-            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}(:,:,idx_scoop);
+            trials.g_via{2}(:,:,j) = g_tran * g_demo{idx_demo}.matrix(:,:,idx_scoop);
             trials.cov_via{2}(:,:,j) = 1e-8 * eye(6);
 
             % Goal pose
@@ -154,12 +154,12 @@ else
 
         % Start pose
         trials.t_via{1}(j) = 0.0;
-        trials.g_via{1}(:,:,j) = g_rand_start * g_demo{idx_demo}(:,:,1);
+        trials.g_via{1}(:,:,j) = g_rand_start * g_demo{idx_demo}.matrix(:,:,1);
         trials.cov_via{1}(:,:,j) = 1e-8 * eye(6);
 
         % Goal pose
         trials.t_via{2}(j) = 1.0;
-        trials.g_via{2}(:,:,j) = g_rand_goal * g_demo{idx_demo}(:,:,end);
+        trials.g_via{2}(:,:,j) = g_rand_goal * g_demo{idx_demo}.matrix(:,:,end);
         trials.cov_via{2}(:,:,j) = 1e-8 * eye(6);
     end
 
@@ -201,13 +201,12 @@ g_sim2real = eye(4);
 
 if strcmp(demo_type, "pouring")
     % Cup
-    g_sim2real(1:3,1:3) = quat2rotm([-0.268727310712929, 0.654269570423345, -0.653749130622258, -0.268940580622729]);
-    g_sim2real(1:3,4) = [2.49313314006345e-07; -0.102999398242869; -0.069999581902642];
+    g_sim2real(1:3,1:3) = rpy2r([-pi/2, -pi/4, 0]);
+    g_sim2real(1:3,4) = [0; -0.103; -0.07];
 
 elseif strcmp(demo_type, "scooping") || strcmp(demo_type, "transporting")
     % Spoon
-    g_sim2real(1:3,1:3) = quat2rotm([0.000736827109921299, -0.924908622088215, -0.380188646017929, 0.000302178329749137]);
-    g_sim2real(1:3,4) = [6.43144294177156e-07; -0.100000334649197; 0.102999664735546];
-
+    g_sim2real(1:3,1:3) = rpy2r([-pi, 0, pi/4]);
+    g_sim2real(1:3,4) = [0; -0.1; 0.103];
 end
 end
