@@ -27,13 +27,11 @@ demo_type = "real/scooping/default";
 group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 0.5;
+VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
 VIA_POSE_SCALE.covariance = 1e-6;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
-result_folder = strcat("../result/", dataset_name, "/", demo_type, "/");
-mkdir(result_folder);
 
 %% Load demo data, generate key poses and compute mean/covariance
 argin.n_step = n_step;
