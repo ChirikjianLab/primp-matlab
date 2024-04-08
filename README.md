@@ -1,9 +1,9 @@
 # PRobabilistically-Informed Motion Primitives (PRIMP)
-MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learning-from-demonstration method on Lie group.
+MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learning-from-demonstration method on Lie group. It is published in IEEE Transactions on Robotics (T-RO).
 
-Documentation is available in [ArXiv](https://arxiv.org/abs/2305.15761).
-
-Python implementation is available [here](https://github.com/ChirikjianLab/primp-python).
+- Publication: [T-RO](), [ArXiv](https://arxiv.org/abs/2305.15761)
+- Project page: [https://chirikjianlab.github.io/primp-page/](https://chirikjianlab.github.io/primp-page/)
+- Python implementation is available [here](https://github.com/ChirikjianLab/primp-python).
 
 ## Authors
 Sipu Ruan (repository maintainer), Weixiao Liu, Xiaoli Wang, Xin Meng and Gregory S. Chirikjian
@@ -62,3 +62,6 @@ mex dtw_c.c
 - Benchmark for PRIMP on synthetic data between SE(3) and PCG(3) formulation [`/test/benchmark_primp_se_pcg.m`](/test/benchmark_primp_se_pcg.m)
 - Benchmark LfD for Orientation-KMP [`/test/benchmark_lfd_kmp.m`](/test/benchmark_lfd_kmp.m)
 - Qualitative comparisons among LfD methods for extrapolation cases [`/test/benchmark_lfd_extrapolation.m`](/test/benchmark_lfd_extrapolation.m)
+
+## Citation
+(Coming soon)
