@@ -1,5 +1,5 @@
 # PRobabilistically-Informed Motion Primitives (PRIMP)
-MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learning-from-demonstration method on Lie group. It is published in **IEEE Transactions on Robotics (T-RO)**.
+MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learning-from-demonstration method on Lie group. It is published in _IEEE Transactions on Robotics (T-RO)_.
 
 - Publication: [T-RO](), [ArXiv](https://arxiv.org/abs/2305.15761)
 - Project page: [https://chirikjianlab.github.io/primp-page/](https://chirikjianlab.github.io/primp-page/)
@@ -19,8 +19,26 @@ All test files are located in [`/test`](/test/) folder. To run scripts for LfD m
 
 - Download the data from [Google Drive](https://drive.google.com/drive/folders/1sgfAjBgO3PWO2nCqerXjVHsovpNF4MgS?usp=sharing). All the demonstrated datasets are locataed in `/demonstrations` folder.
 - Generate `/data` folder that stores all demonstration data
-- Copy all the demonstration sets into the `/data` folder
+- Copy all the demonstration sets into the `/data` folder (Only put folders inside `/demonstrations` into `/data`)
+- (Optional) To generate data trials for real-world experiments, please also download datasets from `/experiments` folder (Put the whole folder).
 - Run scripts in `/test` folder
+
+After data preparation, the structure of `/data` folder should look like
+```
+.
+└───data
+│   └───panda_arm
+|   |   └───real
+|   |   |   └───trajectory
+|   |   |   |   └───...
+|   |   └───simulation
+|   |   |   └───...
+│   └───lasa_handwriting
+|   |   |   └───pose_data
+|   |   |   |   └───...
+│   └───experiments
+|   |   └───...
+```
 
 ### Source code for Orientation-KMP method
 To run Orientation-KMP method,
