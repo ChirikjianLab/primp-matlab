@@ -23,14 +23,14 @@ dataset_name = 'panda_arm';
 
 % Type of demonstration
 demo_type = "simulation/circle";
-% demo_type = "real/pouring/default";
+% demo_type = "real/trajectory/pouring/default";
 % demo_type = "Snake";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
+VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
 VIA_POSE_SCALE.covariance = 1e-4;
 
 % Indicator of whether to generate random via/goal poses

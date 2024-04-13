@@ -20,7 +20,7 @@ n_state = 1000;
 
 % Type of demonstration
 demo_type = "simulation/letter_S";
-% demo_type = "real/pouring/default";
+% demo_type = "real/trajectory/pouring/default";
 
 % Name of the dataset
 dataset_name = 'panda_arm';

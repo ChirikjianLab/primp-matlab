@@ -1,4 +1,4 @@
-% Demo script for extrapolation between PRIMP and Orientation-KMP
+% Compare ability for extrapolation cases between PRIMP and Orientation-KMP
 %  Demonstration data input from "/data" folder in ".json" format. Plot 
 % results from PRIMP and Orientation-KMP when via poses are out of
 % distribution.
@@ -8,8 +8,8 @@
 
 close all; clear; clc;
 add_paths()
-addpath ../../../Toolbox/learn_from_demo/pbdlib-matlab/demos/m_fcts/
-addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
+addpath ../src/external/pbdlib-matlab/demos/m_fcts/
+addpath ../src/external/robInfLib-matlab/fcts/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tunable parameters
@@ -29,20 +29,16 @@ kmp_param.lamdac = 60; % control variance prediction
 kmp_param.kh = 100;
 
 % Name of the dataset
-% dataset_name = 'panda_arm';
 dataset_name = 'lasa_handwriting/pose_data';
 
 % Type of demonstration
-% demo_type = "simulation/circle";
-% demo_type = "real/pouring/default";
 demo_type = "Snake";
-% demo_type = "real/scooping/default";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 200;
+VIA_POSE_SCALE.mean = 20 * ones(6,1);
 VIA_POSE_SCALE.covariance = 1e-4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,7 +55,7 @@ filenames = dir(strcat(argin.data_folder, "*.json"));
 g_demo = parse_demo_trajectory(filenames, argin);
 
 % Generate random via-point poses
-trials = generate_random_trials(g_demo{1}, 1, VIA_POSE_SCALE,...
+trials = generate_random_trials(g_demo{1}, [1, rand], VIA_POSE_SCALE,...
     result_folder);
 
 disp("Generated random configurations!")

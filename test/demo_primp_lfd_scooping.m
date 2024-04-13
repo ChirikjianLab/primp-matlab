@@ -21,7 +21,7 @@ n_sample = 10;
 dataset_name = 'panda_arm';
 
 % Type of demonstration
-demo_type = "real/scooping/default";
+demo_type = "real/trajectory/scooping/default";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';

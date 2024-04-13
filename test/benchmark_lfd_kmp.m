@@ -5,8 +5,8 @@
 
 close all; clear; clc;
 add_paths()
-addpath ../../../Toolbox/learn_from_demo/pbdlib-matlab/demos/m_fcts/
-addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
+addpath ../src/external/pbdlib-matlab/demos/m_fcts/
+addpath ../src/external/robInfLib-matlab/fcts/
 
 % Name of the dataset
 dataset_name = {'panda_arm', 'lasa_handwriting/pose_data'};

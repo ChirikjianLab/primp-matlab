@@ -34,7 +34,7 @@ n_step = 50;
 group_name = 'PCG';
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
+VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
 VIA_POSE_SCALE.covariance = 1e-4;
 
 % Indicator of whether to generate random via/goal poses
@@ -77,7 +77,8 @@ if is_generate_random
     mkdir(result_folder);
 
     % Generate random via/goal poses
-    trials = generate_random_trials(g_demo{1}, n_trial, VIA_POSE_SCALE,...
+    t_trials = [ones(n_trial, 1), rand(n_trial, 1)];
+    trials = generate_random_trials(g_demo{1}, t_trials, VIA_POSE_SCALE,...
         result_folder);
 
     disp("Generated random configurations!")

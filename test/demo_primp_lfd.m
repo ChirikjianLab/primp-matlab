@@ -32,9 +32,9 @@ dataset_name = 'panda_arm';
 
 % Type of demonstration
 demo_type = "simulation/circle";
-% demo_type = "real/pouring/default";
+% demo_type = "real/trajectory/pouring/default";
 % demo_type = "Snake";
-% demo_type = "real/scooping/default";
+% demo_type = "real/trajectory/scooping/default";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';

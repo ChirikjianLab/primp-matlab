@@ -5,15 +5,19 @@
 
 close all; clear; clc;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Tunable parameters
+% ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 % Dataset and demo set info
 dataset_name = 'panda_arm';
 % dataset_name = 'lasa_handwriting/pose_data';
 
+% Whether to robot or not
+is_load_robot = true;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 demo_type = load_dataset_param(dataset_name);
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");
-
-% Load robot
-is_load_robot = true;
 
 if is_load_robot
     robot = loadrobot('frankaEmikaPanda');

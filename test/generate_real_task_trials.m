@@ -26,8 +26,8 @@ demo_mode = "default";
 % demo_mode = "rotating_left";
 
 % Experiment ID
-exp_id = "cup_silver_bowl_03_23_1";
-% exp_id = "spoon_white_bowl_03_30_1";
+exp_id = "no obstacle/silver_bowl_03_23_1_s";
+% exp_id = "white_bowl_03_30_1_s";
 
 % Group name: 'SE', 'PCG'
 group_name = 'PCG';
@@ -37,12 +37,12 @@ is_store = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Name of the dataset
-dataset_name = 'panda_arm/real';
+dataset_name = 'panda_arm/real/trajectory';
 
 % Demo, key pose and result folder
 data_folder = strcat("../data/", dataset_name, "/", demo_type, "/", demo_mode, "/");
-key_pose_folder = strcat("../data/experiment_key_pose/", demo_type, "/", demo_mode, "/", exp_id, "/");
-result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/", demo_mode, "/");
+key_pose_folder = strcat("../data/experiments/", demo_type, "/", exp_id, "/");
+result_folder = strcat("../result/benchmark/", dataset_name, "/", demo_type, "/");
 mkdir(result_folder);
 
 robot = loadrobot("frankaEmikaPanda");

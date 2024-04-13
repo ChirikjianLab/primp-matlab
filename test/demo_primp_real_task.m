@@ -27,7 +27,7 @@ param.group_name = 'PCG';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Name of the dataset
-dataset_name = 'panda_arm/real';
+dataset_name = 'panda_arm/real/trajectory';
 
 % Data and result folder
 param.data_folder = strcat("../data/", dataset_name, "/", demo_type, "/");

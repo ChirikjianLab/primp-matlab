@@ -2,11 +2,15 @@
 %
 %  Author
 %    Sipu Ruan, 2023
+%
+%  Reference (modified parts of the code)
+%   - PbDLib: https://gitlab.idiap.ch/rli/pbdlib-matlab/
+%   - Orientation-KMP: https://github.com/yanlongtu/robInfLib-matlab
 
 close all; clear; clc;
 add_paths();
-addpath ../../../Toolbox/learn_from_demo/pbdlib-matlab/demos/m_fcts/
-addpath ../../../Toolbox/learn_from_demo/robInfLib-matlab/fcts/
+addpath ../src/external/pbdlib-matlab/demos/m_fcts/
+addpath ../src/external/robInfLib-matlab/fcts/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tunable parameters
@@ -35,7 +39,7 @@ demo_type = "Snake";
 % demo_type = "real/pouring/default";
 
 % Scaling of via pose mean and covariance
-VIA_POSE_SCALE.mean = 1;
+VIA_POSE_SCALE.mean = [1e-3 * ones(3,1); 1e-4 * ones(3,1)];
 VIA_POSE_SCALE.covariance = 1e-5;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,7 +61,7 @@ g_demo = parse_demo_trajectory(filenames, argin);
 
 % Generate random via/goal poses
 t_via = [0, 1];
-trials = generate_random_trials_given_t_via(g_demo{1}, t_via, VIA_POSE_SCALE);
+trials = generate_random_trials(g_demo{1}, t_via, VIA_POSE_SCALE);
 n_demo = length(g_demo);
 disp("Generated random configurations!")
 
