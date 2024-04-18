@@ -1,7 +1,7 @@
 # PRobabilistically-Informed Motion Primitives (PRIMP)
 MATLAB implementation of PRobabilistically-Informed Motion Primitives, a learning-from-demonstration method on Lie group. It is published in _IEEE Transactions on Robotics (T-RO)_.
 
-- Publication: [T-RO](), [ArXiv](https://arxiv.org/abs/2305.15761)
+- Publication: [T-RO](https://ieeexplore.ieee.org/document/10502164)
 - Project page: [https://chirikjianlab.github.io/primp-page/](https://chirikjianlab.github.io/primp-page/)
 - Python implementation is available [here](https://github.com/ChirikjianLab/primp-python).
 
@@ -92,4 +92,20 @@ mex dtw_c.c
 - Generate reference trajectory using PRIMP for real-world experiments [`/test/generate_real_task_trials.m`](/test/generate_real_task_trials.m)
 
 ## Citation
-(Coming soon)
+```
+S. Ruan, W. Liu, X. Wang, X. Meng and G. S. Chirikjian, "PRIMP: PRobabilistically-Informed Motion Primitives for Efficient Affordance Learning from Demonstration," in IEEE Transactions on Robotics, doi: 10.1109/TRO.2024.3390052.
+```
+
+BibTex
+```
+@ARTICLE{10502164,
+  author={Ruan, Sipu and Liu, Weixiao and Wang, Xiaoli and Meng, Xin and Chirikjian, Gregory S.},
+  journal={IEEE Transactions on Robotics}, 
+  title={PRIMP: PRobabilistically-Informed Motion Primitives for Efficient Affordance Learning from Demonstration}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-20},
+  keywords={Trajectory;Robots;Probabilistic logic;Planning;Affordances;Task analysis;Manifolds;Learning from Demonstration;Probability and Statistical Methods;Motion and Path Planning;Service Robots},
+  doi={10.1109/TRO.2024.3390052}}
+```
